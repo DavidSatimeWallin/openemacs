@@ -1035,8 +1035,8 @@ void editorFind(int fd) {
         if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
             if (qlen != 0) query[--qlen] = '\0';
             last_match = -1;
-        } else if (c == ESC || c == ENTER) {
-            if (c == ESC) {
+        } else if (c == ESC || c == CTRL_C || c == ENTER) {
+            if (c == ESC || c == CTRL_C) {
                 E.cx = saved_cx; E.cy = saved_cy;
                 E.coloff = saved_coloff; E.rowoff = saved_rowoff;
             }
