@@ -113,8 +113,10 @@ static struct editorConfig E;
 
 enum KEY_ACTION {
         KEY_NULL = 0,       /* NULL */
+        CTRL_A = 1,         /* Ctrl-a */
         CTRL_C = 3,         /* Ctrl-c */
         CTRL_D = 4,         /* Ctrl-d */
+        CTRL_E = 5,         /* Ctrl-e */
         CTRL_F = 6,         /* Ctrl-f */
         CTRL_H = 8,         /* Ctrl-h */
         TAB = 9,            /* Tab */
@@ -990,6 +992,20 @@ void editorSetStatusMessage(const char *fmt, ...) {
 
 #define KILO_QUERY_LEN 256
 
+void endOfLine() {
+    int filerow = E.rowoff+E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    if (row )
+        E.cx = row->size;
+}
+
+void startOfLine() {
+    int filerow = E.rowoff+E.cy;
+    erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
+    if (row )
+        E.cx = 0;
+}
+
 void editorFind(int fd) {
     char query[KILO_QUERY_LEN+1] = {0};
     int qlen = 0;
@@ -1173,6 +1189,9 @@ void editorProcessKeypress(int fd) {
     case ENTER:         /* Enter */
         editorInsertNewline();
         break;
+    case CTRL_A:
+        startOfLine();
+        break;
     case CTRL_C:        /* Ctrl-c */
         /* We ignore ctrl-c, it can't be so simple to lose the changes
          * to the edited file. */
@@ -1197,6 +1216,9 @@ void editorProcessKeypress(int fd) {
         break;
     case CTRL_S:        /* Ctrl-s */
         editorSave();
+        break;
+    case CTRL_E:
+        endOfLine();
         break;
     case CTRL_F:
         editorFind(fd);
