@@ -57,8 +57,8 @@
 /* Syntax highlight types */
 #define HL_NORMAL 0
 #define HL_NONPRINT 1
-#define HL_COMMENT 2   /* Single line comment. */
-#define HL_MLCOMMENT 3 /* Multi-line comment. */
+#define HL_COMMENT 2    /* Single line comment. */
+#define HL_MLCOMMENT 3  /* Multi-line comment. */
 #define HL_KEYWORD1 4
 #define HL_KEYWORD2 5
 #define HL_STRING 6
@@ -94,7 +94,7 @@ typedef struct hlcolor {
 } hlcolor;
 
 struct editorConfig {
-    int cx,cy;  /* Cursor x and y position in characters */
+    int cx,cy;      /* Cursor x and y position in characters */
     int rowoff;     /* Offset of row displayed. */
     int coloff;     /* Offset of column displayed. */
     int screenrows; /* Number of rows that we can show */
@@ -512,12 +512,12 @@ void editorUpdateSyntax(erow *row) {
 int editorSyntaxToColor(int hl) {
     switch(hl) {
     case HL_COMMENT:
-    case HL_MLCOMMENT: return 36;     /* cyan */
+    case HL_MLCOMMENT: return 36;   /* cyan */
     case HL_KEYWORD1: return 33;    /* yellow */
     case HL_KEYWORD2: return 32;    /* green */
     case HL_STRING: return 35;      /* magenta */
     case HL_NUMBER: return 31;      /* red */
-    case HL_MATCH: return 34;      /* blu */
+    case HL_MATCH: return 34;       /* blu */
     default: return 37;             /* white */
     }
 }
@@ -868,7 +868,7 @@ void editorRefreshScreen(void) {
     struct abuf ab = ABUF_INIT;
 
     abAppend(&ab,"\x1b[?25l",6); /* Hide cursor. */
-    abAppend(&ab,"\x1b[H",3); /* Go home. */
+    abAppend(&ab,"\x1b[H",3);    /* Go home. */
     for (y = 0; y < E.screenrows; y++) {
         int filerow = E.rowoff+y;
 
