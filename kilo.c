@@ -248,7 +248,7 @@ int editorReadKey(int fd) {
     while ((nread = read(fd,&c,1)) == 0);
     if (nread == -1) exit(1);
 
-    while(1) {
+    while (1) {
         switch(c) {
         case ESC:    /* escape sequence */
             /* If this is just an ESC, we'll timeout here. */
@@ -387,7 +387,7 @@ void editorUpdateSyntax(erow *row) {
     /* Point to the first non-space char. */
     p = row->render;
     i = 0; /* Current char offset */
-    while(*p && isspace(*p)) {
+    while (*p && isspace(*p)) {
         p++;
         i++;
     }
@@ -400,7 +400,7 @@ void editorUpdateSyntax(erow *row) {
     if (row->idx > 0 && editorRowHasOpenComment(&E.row[row->idx-1]))
         in_comment = 1;
 
-    while(*p) {
+    while (*p) {
         /* Handle // comments. */
         if (prev_sep && *p == scs[0] && *(p+1) == scs[1]) {
             /* From here to end is a comment */
@@ -479,8 +479,7 @@ void editorUpdateSyntax(erow *row) {
                 if (kw2) klen--;
 
                 if (!memcmp(p,keywords[j],klen) &&
-                    is_separator(*(p+klen)))
-                {
+                    is_separator(*(p+klen))) {
                     /* Keyword */
                     memset(row->hl+i,kw2 ? HL_KEYWORD2 : HL_KEYWORD1,klen);
                     p += klen;
@@ -528,7 +527,7 @@ void editorSelectSyntaxHighlight(char *filename) {
     for (unsigned int j = 0; j < HLDB_ENTRIES; j++) {
         struct editorSyntax *s = HLDB+j;
         unsigned int i = 0;
-        while(s->filematch[i]) {
+        while (s->filematch[i]) {
             char *p;
             int patlen = strlen(s->filematch[i]);
             if ((p = strstr(filename,s->filematch[i])) != NULL) {
@@ -559,7 +558,7 @@ void editorUpdateRow(erow *row) {
     for (j = 0; j < row->size; j++) {
         if (row->chars[j] == TAB) {
             row->render[idx++] = ' ';
-            while((idx+1) % 8 != 0) row->render[idx++] = ' ';
+            while ((idx+1) % 8 != 0) row->render[idx++] = ' ';
         } else {
             row->render[idx++] = row->chars[j];
         }
@@ -692,7 +691,7 @@ void editorInsertChar(int c) {
     /* If the row where the cursor is currently located does not exist in our
      * logical representaion of the file, add enough empty rows as needed. */
     if (!row) {
-        while(E.numrows <= filerow)
+        while (E.numrows <= filerow)
             editorInsertRow(E.numrows,"",0);
     }
     row = &E.row[filerow];
@@ -797,7 +796,7 @@ int editorOpen(char *filename) {
     char *line = NULL;
     size_t linecap = 0;
     ssize_t linelen;
-    while((linelen = getline(&line,&linecap,fp)) != -1) {
+    while ((linelen = getline(&line,&linecap,fp)) != -1) {
         if (linelen && (line[linelen-1] == '\n' || line[linelen-1] == '\r'))
             line[--linelen] = '\0';
         editorInsertRow(E.numrows,line,linelen);
@@ -882,7 +881,7 @@ void editorRefreshScreen(void) {
                     abAppend(&ab,"~",1);
                     padding--;
                 }
-                while(padding--) abAppend(&ab," ",1);
+                while (padding--) abAppend(&ab," ",1);
                 abAppend(&ab,welcome,welcomelen);
             } else {
                 abAppend(&ab,"~\x1b[0K\r\n",7);
@@ -942,7 +941,7 @@ void editorRefreshScreen(void) {
         "%d/%d",E.rowoff+E.cy+1,E.numrows);
     if (len > E.screencols) len = E.screencols;
     abAppend(&ab,status,len);
-    while(len < E.screencols) {
+    while (len < E.screencols) {
         if (E.screencols - len == rlen) {
             abAppend(&ab,rstatus,rlen);
             break;
@@ -1026,7 +1025,7 @@ void editorFind(int fd) {
     int saved_cx = E.cx, saved_cy = E.cy;
     int saved_coloff = E.coloff, saved_rowoff = E.rowoff;
 
-    while(1) {
+    while (1) {
         editorSetStatusMessage(
             "Search: %s (Use ESC/Arrows/Enter)", query);
         editorRefreshScreen();
@@ -1232,14 +1231,10 @@ void editorProcessKeypress(int fd) {
             E.cy = 0;
         else if (c == PAGE_DOWN && E.cy != E.screenrows-1)
             E.cy = E.screenrows-1;
-        {
         int times = E.screenrows;
-        while(times--)
-            editorMoveCursor(c == PAGE_UP ? ARROW_UP:
-                                            ARROW_DOWN);
-        }
+        while (times--)
+            editorMoveCursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
-
     case ARROW_UP:
     case ARROW_DOWN:
     case ARROW_LEFT:
@@ -1266,9 +1261,7 @@ int editorFileWasModified(void) {
 }
 
 void updateWindowSize(void) {
-    if (getWindowSize(STDIN_FILENO,STDOUT_FILENO,
-                      &E.screenrows,&E.screencols) == -1)
-    {
+    if (getWindowSize(STDIN_FILENO,STDOUT_FILENO, &E.screenrows,&E.screencols) == -1) {
         perror("Unable to query the screen for size (columns / rows)");
         exit(1);
     }
@@ -1300,7 +1293,7 @@ void initEditor(void) {
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        fprintf(stderr,"Usage: kilo <filename>\n");
+        fprintf(stderr, "Usage: kilo <filename>\n");
         exit(1);
     }
 
@@ -1308,9 +1301,8 @@ int main(int argc, char **argv) {
     editorSelectSyntaxHighlight(argv[1]);
     editorOpen(argv[1]);
     enableRawMode(STDIN_FILENO);
-    editorSetStatusMessage(
-        "HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
-    while(1) {
+    editorSetStatusMessage("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+    while (1) {
         editorRefreshScreen();
         editorProcessKeypress(STDIN_FILENO);
     }
