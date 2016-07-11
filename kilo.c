@@ -120,11 +120,12 @@ enum KEY_ACTION {
         CTRL_F = 6,         /* Ctrl-f */
         CTRL_H = 8,         /* Ctrl-h */
         TAB = 9,            /* Tab */
-        CTRL_L = 12,        /* Ctrl+l */
+        CTRL_L = 12,        /* Ctrl-l */
         ENTER = 13,         /* Enter */
         CTRL_Q = 17,        /* Ctrl-q */
         CTRL_S = 19,        /* Ctrl-s */
         CTRL_U = 21,        /* Ctrl-u */
+        CTRL_X = 24,        /* Ctrl-x */
         ESC = 27,           /* Escape */
         BACKSPACE =  127,   /* Backspace */
         /* The following are just soft codes, not really reported by the
@@ -1248,7 +1249,8 @@ void editorProcessKeypress(int fd) {
     case ARROW_RIGHT:
         editorMoveCursor(c);
         break;
-    case CTRL_L: /* ctrl+l, clear screen */
+    case CTRL_X: /* ctrl-x, clear screen */
+    case CTRL_L: /* ctrl-l, clear screen */
         /* Just refresh the line as side effect. */
         break;
     case ESC:
