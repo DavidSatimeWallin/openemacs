@@ -126,6 +126,7 @@ enum KEY_ACTION {
         CTRL_S = 19,        /* Ctrl-s */
         CTRL_U = 21,        /* Ctrl-u */
         CTRL_X = 24,        /* Ctrl-x */
+        CTRL_Z = 26,        /* Ctrl-z */
         ESC = 27,           /* Escape */
         BACKSPACE =  127,   /* Backspace */
         /* The following are just soft codes, not really reported by the
@@ -1245,6 +1246,9 @@ void editorProcessKeypress(int fd) {
     case CTRL_L: /* ctrl-l, clear screen */
         /* Just refresh the line as side effect. */
         break;
+    case CTRL_Z: /* ctrl-z, suspend process */
+        kill(getpid(), SIGTSTP);
+        break;
     case ESC:
         /* Nothing to do for ESC in this mode. */
         break;
@@ -1277,6 +1281,12 @@ void handleSigWinCh(int unused __attribute__((unused))) {
     editorRefreshScreen();
 }
 
+void handle_sigcont(int unused __attribute__((unused))) {
+    disableRawMode(STDIN_FILENO);
+    enableRawMode(STDIN_FILENO);
+    editorRefreshScreen();
+}
+
 void initEditor(void) {
     E.cx = 0;
     E.cy = 0;
@@ -1289,6 +1299,7 @@ void initEditor(void) {
     E.syntax = NULL;
     updateWindowSize();
     signal(SIGWINCH, handleSigWinCh);
+    signal(SIGCONT, handle_sigcont);
 }
 
 int main(int argc, char **argv) {
