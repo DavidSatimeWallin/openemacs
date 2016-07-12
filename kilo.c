@@ -118,7 +118,7 @@ enum KEY_ACTION {
         CTRL_D = 4,         /* Ctrl-d */
         CTRL_E = 5,         /* Ctrl-e */
         CTRL_F = 6,         /* Ctrl-f */
-        CTRL_H = 8,         /* Ctrl-h */
+        BACKSPACE = 8,      /* Backspace */
         TAB = 9,            /* Tab */
         CTRL_L = 12,        /* Ctrl-l */
         ENTER = 13,         /* Enter */
@@ -128,7 +128,7 @@ enum KEY_ACTION {
         CTRL_X = 24,        /* Ctrl-x */
         CTRL_Z = 26,        /* Ctrl-z */
         ESC = 27,           /* Escape */
-        BACKSPACE =  127,   /* Backspace */
+        FORWARD_DELETE =  127, /* Forward delete */
         /* The following are just soft codes, not really reported by the
          * terminal directly. */
         ARROW_LEFT = 1000,
@@ -1032,7 +1032,7 @@ void editorFind(int fd) {
         editorRefreshScreen();
 
         int c = editorReadKey(fd);
-        if (c == DEL_KEY || c == CTRL_H || c == BACKSPACE) {
+        if (c == DEL_KEY || c == BACKSPACE || c == FORWARD_DELETE) {
             if (qlen != 0) query[--qlen] = '\0';
             last_match = -1;
         } else if (c == ESC || c == CTRL_C || c == ENTER) {
@@ -1221,8 +1221,8 @@ void editorProcessKeypress(int fd) {
     case CTRL_F:
         editorFind(fd);
         break;
-    case BACKSPACE:     /* Backspace */
-    case CTRL_H:        /* Ctrl-h */
+    case FORWARD_DELETE:
+    case BACKSPACE:
     case DEL_KEY:
         editorDelChar();
         break;
