@@ -1272,7 +1272,7 @@ void updateWindowSize(void) {
     E.screenrows -= 2; /* Get room for status bar. */
 }
 
-void handleSigWinCh(int unused __attribute__((unused))) {
+void handle_sigwinch(int unused __attribute__((unused))) {
     updateWindowSize();
     if (E.cy > E.screenrows)
         E.cy = E.screenrows - 1;
@@ -1298,7 +1298,7 @@ void initEditor(void) {
     E.filename = NULL;
     E.syntax = NULL;
     updateWindowSize();
-    signal(SIGWINCH, handleSigWinCh);
+    signal(SIGWINCH, handle_sigwinch);
     signal(SIGCONT, handle_sigcont);
 }
 
