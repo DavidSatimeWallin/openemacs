@@ -248,7 +248,7 @@ int editor_read_key(int fd) {
     if (nread == -1) exit(1);
 
     while (1) {
-        switch(c) {
+        switch (c) {
         case ESC:    /* escape sequence */
             /* If this is just an ESC, we'll timeout here. */
             if (read(fd, seq, 1) == 0) return ESC;
@@ -508,7 +508,7 @@ void editor_update_syntax(erow *row) {
 
 /* Maps syntax highlight token types to terminal colors. */
 int editor_syntax_to_color(int hl) {
-    switch(hl) {
+    switch (hl) {
     case HL_COMMENT:
     case HL_MLCOMMENT: return 36;   /* cyan */
     case HL_KEYWORD1: return 33;    /* yellow */
@@ -1088,7 +1088,7 @@ void editor_move_cursor(int key) {
     int rowlen;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
-    switch(key) {
+    switch (key) {
     case ARROW_LEFT:
         if (E.cx == 0) {
             if (E.coloff) {
@@ -1164,7 +1164,7 @@ void editor_process_keypress(int fd) {
     static int quit_times = KILO_QUIT_TIMES;
 
     int c = editor_read_key(fd);
-    switch(c) {
+    switch (c) {
     case ENTER:         /* Enter */
         editor_insert_newline();
         break;
