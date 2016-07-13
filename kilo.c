@@ -1164,14 +1164,13 @@ void editor_process_keypress(int fd) {
 
     int c = editor_read_key(fd);
     switch (c) {
-    case ENTER:         /* Enter */
+    case ENTER:
         editor_insert_newline();
         break;
     case CTRL_A:
         start_of_line();
         break;
-    case CTRL_C:        /* Ctrl-c */
-    case CTRL_Q:        /* Ctrl-q */
+    case CTRL_C: case CTRL_Q:
         /* Quit if the file was already saved. */
         if (E.dirty && quit_times) {
             editor_set_status_message("WARNING! File has unsaved changes. Press Ctrl-Q %d more times to quit.", quit_times);
@@ -1188,7 +1187,7 @@ void editor_process_keypress(int fd) {
             exit(0);
         }
         break;
-    case CTRL_S:        /* Ctrl-s */
+    case CTRL_S:
         editor_save();
         break;
     case CTRL_E:
@@ -1197,13 +1196,10 @@ void editor_process_keypress(int fd) {
     case CTRL_F:
         editor_find(fd);
         break;
-    case FORWARD_DELETE:
-    case BACKSPACE:
-    case DEL_KEY:
+    case FORWARD_DELETE: case BACKSPACE: case DEL_KEY:
         editor_del_char();
         break;
-    case PAGE_UP:
-    case PAGE_DOWN:
+    case PAGE_UP: case PAGE_DOWN:
         if (c == PAGE_UP && E.cy != 0)
             E.cy = 0;
         else if (c == PAGE_DOWN && E.cy != E.screenrows - 1)
@@ -1212,17 +1208,14 @@ void editor_process_keypress(int fd) {
         while (times--)
             editor_move_cursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
-    case ARROW_UP:
-    case ARROW_DOWN:
-    case ARROW_LEFT:
-    case ARROW_RIGHT:
+    case ARROW_UP: case ARROW_DOWN: case ARROW_LEFT: case ARROW_RIGHT:
         editor_move_cursor(c);
         break;
-    case CTRL_X: /* ctrl-x, clear screen */
-    case CTRL_L: /* ctrl-l, clear screen */
+    case CTRL_X: case CTRL_L:
         /* Just refresh the line as side effect. */
         break;
-    case CTRL_Z: /* ctrl-z, suspend process */
+    case CTRL_Z:
+        /* Suspend process. */
         kill(getpid(), SIGTSTP);
         break;
     case ESC:
