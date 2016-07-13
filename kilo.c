@@ -36,21 +36,18 @@
 #define _GNU_SOURCE
 #define _DEFAULT_SOURCE
 
-#include <ctype.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <termios.h>
-#include <time.h>
-#include <unistd.h>
+#include <ctype.h>     /* isdigit, isspace */
+#include <errno.h>     /* errno, ENOENT, ENOTTY */
+#include <fcntl.h>     /* open, O_CREAT, O_RDWR */
+#include <signal.h>    /* kill */
+#include <stdarg.h>    /* va_end, va_start */
+#include <stdio.h>     /* FILE, fclose, fopen, getline, perror, snprintf, sscanf, stderr, vsnprintf */
+#include <stdlib.h>    /* atexit, exit, free, malloc, realloc */
+#include <string.h>    /* memcmp, memcpy, memmove, memset, strchr, strlen, strdup, strerror, strstr */
+#include <sys/ioctl.h> /* ioctl */
+#include <termios.h>   /* struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME */
+#include <time.h>      /* time */
+#include <unistd.h>    /* close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write */
 
 /* Syntax highlight types */
 #define HL_NORMAL 0
