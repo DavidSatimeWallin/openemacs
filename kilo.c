@@ -362,9 +362,9 @@ int is_separator(int c) {
  * that starts at this row or at one before, and does not end at the end
  * of the row but spawns to the next row. */
 int editor_row_has_open_comment(erow *row) {
-    if (row->hl && row->rsize && row->hl[row->rsize-1] == HL_MLCOMMENT &&
-        (row->rsize < 2 || (row->render[row->rsize-2] != '*' ||
-                            row->render[row->rsize-1] != '/'))) return 1;
+    if (row->hl && row->rsize && row->hl[row->rsize - 1] == HL_MLCOMMENT &&
+        (row->rsize < 2 || (row->render[row->rsize - 2] != '*' ||
+                            row->render[row->rsize - 1] != '/'))) return 1;
     return 0;
 }
 
@@ -396,7 +396,7 @@ void editor_update_syntax(erow *row) {
 
     /* If the previous line has an open comment, this line starts
      * with an open comment state. */
-    if (row->idx > 0 && editor_row_has_open_comment(&E.row[row->idx-1]))
+    if (row->idx > 0 && editor_row_has_open_comment(&E.row[row->idx - 1]))
         in_comment = 1;
 
     while (*p) {
@@ -1042,7 +1042,7 @@ void editor_find(int fd) {
 
             for (i = 0; i < E.numrows; i++) {
                 current += find_next;
-                if (current == -1) current = E.numrows-1;
+                if (current == -1) current = E.numrows - 1;
                 else if (current == E.numrows) current = 0;
                 match = strstr(E.row[current].render, query);
                 if (match) {
