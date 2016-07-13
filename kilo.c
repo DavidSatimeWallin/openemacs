@@ -83,8 +83,7 @@ typedef struct erow {
     char *chars;        /* Row content. */
     char *render;       /* Row content "rendered" for screen (for TABs). */
     unsigned char *hl;  /* Syntax highlight type for each character in render.*/
-    int hl_oc;          /* Row had open comment at end in last syntax highlight
-                           check. */
+    int hl_oc;          /* Row had open comment at end in last syntax highlight check. */
 } erow;
 
 typedef struct hlcolor {
@@ -827,7 +826,7 @@ int editor_save(void) {
     close(fd);
     free(buf);
     E.dirty = 0;
-    editor_set_status_message("%d bytes written on disk", len);
+    editor_set_status_message("Wrote %s (%d bytes)", E.filename, len);
     return 0;
 
 writeerr:
