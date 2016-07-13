@@ -355,7 +355,7 @@ failed:
 /* ====================== Syntax highlight color scheme  ==================== */
 
 int is_separator(int c) {
-    return c == '\0' || isspace(c) || strchr(",.()+-/*=~%[];",c) != NULL;
+    return c == '\0' || isspace(c) || strchr(",.()+-/*=~%[];", c) != NULL;
 }
 
 /* Return true if the specified row last char is part of a multi line comment
@@ -477,8 +477,7 @@ void editor_update_syntax(erow *row) {
                 int kw2 = keywords[j][klen - 1] == '|';
                 if (kw2) klen--;
 
-                if (!memcmp(p, keywords[j], klen) &&
-                    is_separator(*(p + klen))) {
+                if (!memcmp(p, keywords[j], klen) && is_separator(*(p + klen))) {
                     /* Keyword */
                     memset(row->hl + i, kw2 ? HL_KEYWORD2 : HL_KEYWORD1, klen);
                     p += klen;
@@ -544,17 +543,17 @@ void editor_select_syntax_highlight(char *filename) {
 
 /* Update the rendered version and the syntax highlight of a row. */
 void editor_update_row(erow *row) {
-    int tabs = 0, nonprint = 0, j, idx;
+    int tabs = 0, nonprint = 0, idx;
 
    /* Create a version of the row we can directly print on the screen,
      * respecting tabs, substituting non printable characters with '?'. */
     free(row->render);
-    for (j = 0; j < row->size; j++)
-        if (row->chars[j] == TAB) tabs++;
+    for (int i = 0; i < row->size; i++)
+        if (row->chars[i] == TAB) tabs++;
 
     row->render = malloc(row->size + tabs * 8 + nonprint * 9 + 1);
     idx = 0;
-    for (j = 0; j < row->size; j++) {
+    for (int j = 0; j < row->size; j++) {
         if (row->chars[j] == TAB) {
             row->render[idx++] = ' ';
             while ((idx + 1) % 8 != 0) row->render[idx++] = ' ';
@@ -575,7 +574,7 @@ void editor_insert_row(int at, char *s, size_t len) {
     if (at > E.numrows) return;
     E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
     if (at != E.numrows) {
-        memmove(E.row + at + 1,E.row + at, sizeof(E.row[0]) * (E.numrows - at));
+        memmove(E.row + at + 1, E.row + at, sizeof(E.row[0]) * (E.numrows - at));
         for (int j = at + 1; j <= E.numrows; j++) E.row[j].idx++;
     }
     E.row[at].size = len;
@@ -826,7 +825,7 @@ int editor_save(void) {
 writeerr:
     free(buf);
     if (fd != -1) close(fd);
-    editor_set_status_message("Can't save! I/O error: %s",strerror(errno));
+    editor_set_status_message("Can't save! I/O error: %s", strerror(errno));
     return 1;
 }
 
@@ -1038,9 +1037,9 @@ void editor_find(int fd) {
         if (find_next) {
             char *match = NULL;
             int match_offset = 0;
-            int i, current = last_match;
+            int current = last_match;
 
-            for (i = 0; i < E.numrows; i++) {
+            for (int i = 0; i < E.numrows; i++) {
                 current += find_next;
                 if (current == -1) current = E.numrows - 1;
                 else if (current == E.numrows) current = 0;
