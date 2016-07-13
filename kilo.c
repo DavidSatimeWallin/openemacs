@@ -212,7 +212,7 @@ int enable_raw_mode(int fd) {
     if (E.rawmode) return 0; /* Already enabled. */
     if (!isatty(STDIN_FILENO)) goto fatal;
     atexit(editor_at_exit);
-    if (tcgetattr(fd,&orig_termios) == -1) goto fatal;
+    if (tcgetattr(fd, &orig_termios) == -1) goto fatal;
 
     raw = orig_termios;  /* modify the original mode */
     /* input modes: no break, no CR to NL, no parity check, no strip char,
@@ -403,7 +403,7 @@ void editor_update_syntax(erow *row) {
         /* Handle // comments. */
         if (prev_sep && *p == scs[0] && *(p + 1) == scs[1]) {
             /* From here to end is a comment */
-            memset(row->hl + i, HL_COMMENT, row->size-i);
+            memset(row->hl + i, HL_COMMENT, row->size - i);
             return;
         }
 
@@ -643,7 +643,7 @@ void editor_row_insert_char(erow *row, int at, int c) {
     if (at > row->size) {
         /* Pad the string with spaces if the insert location is outside the
          * current length by more than a single character. */
-        int padlen = at-row->size;
+        int padlen = at - row->size;
         /* In the next line +2 means: new char and null term. */
         row->chars = realloc(row->chars, row->size + padlen + 2);
         memset(row->chars + row->size, ' ', padlen);
@@ -653,7 +653,7 @@ void editor_row_insert_char(erow *row, int at, int c) {
         /* If we are in the middle of the string just make space for 1 new
          * char plus the (already existing) null term. */
         row->chars = realloc(row->chars, row->size + 2);
-        memmove(row->chars + at + 1, row->chars + at, row->size-at + 1);
+        memmove(row->chars + at + 1, row->chars + at, row->size - at + 1);
         row->size++;
     }
     row->chars[at] = c;
@@ -722,7 +722,7 @@ void editor_insert_newline(void) {
         editor_insert_row(filerow, "", 0);
     } else {
         /* We are in the middle of a line. Split it between two rows. */
-        editor_insert_row(filerow + 1, row->chars + filecol, row->size-filecol);
+        editor_insert_row(filerow + 1, row->chars + filecol, row->size - filecol);
         row = &E.row[filerow];
         row->chars[filecol] = '\0';
         row->size = filecol;
@@ -1147,7 +1147,7 @@ void editor_move_cursor(int key) {
     row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     rowlen = row ? row->size : 0;
     if (filecol > rowlen) {
-        E.cx -= filecol-rowlen;
+        E.cx -= filecol - rowlen;
         if (E.cx < 0) {
             E.coloff += E.cx;
             E.cx = 0;
