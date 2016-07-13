@@ -205,6 +205,13 @@ void editor_at_exit(void) {
     disable_raw_mode(STDIN_FILENO);
 }
 
+void console_buffer_open(void) {
+    /* switch to another buffer in order to be able to restore state at exit
+     * by calling console_buffer_close(void).
+     */
+    write(STDOUT_FILENO, "\x1b[?47h", 6);
+}
+
 /* Raw mode: 1960 magic shit. */
 int enable_raw_mode(int fd) {
     struct termios raw;
@@ -232,6 +239,7 @@ int enable_raw_mode(int fd) {
     /* put terminal in raw mode after flushing */
     if (tcsetattr(fd, TCSAFLUSH, &raw) < 0) goto fatal;
     E.rawmode = 1;
+    console_buffer_open();
     return 0;
 
 fatal:
@@ -1154,6 +1162,18 @@ void editor_move_cursor(int key) {
     }
 }
 
+void console_buffer_close(void) {
+    /* restore console to the state before program started */
+    write(STDOUT_FILENO, "\x1b[?9l", 5);
+    write(STDOUT_FILENO, "\x1b[?47l", 6);
+    char buf[32];
+    struct abuf ab = ABUF_INIT;
+    snprintf(buf, sizeof(buf), "\x1b[%d;%dH\r\n", E.screenrows + 1, 1);
+    abuf_append(&ab, buf, strlen(buf));
+    write(STDOUT_FILENO, ab.b, ab.len);
+    abuf_free(&ab);
+}
+
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
 #define KILO_QUIT_TIMES 3
@@ -1177,13 +1197,7 @@ void editor_process_keypress(int fd) {
             quit_times--;
             return;
         } else {
-            /* move cursor below editor before quitting */
-            char buf[32];
-            struct abuf ab = ABUF_INIT;
-            snprintf(buf, sizeof(buf), "\x1b[%d;%dH\r\n", E.screenrows + 2, 1); //numrows
-            abuf_append(&ab, buf, strlen(buf));
-            write(STDOUT_FILENO, ab.b, ab.len);
-            abuf_free(&ab);
+            console_buffer_close();
             exit(0);
         }
         break;
@@ -1216,6 +1230,7 @@ void editor_process_keypress(int fd) {
         break;
     case CTRL_Z:
         /* Suspend process. */
+        console_buffer_close();
         kill(getpid(), SIGTSTP);
         break;
     case ESC:
@@ -1252,6 +1267,7 @@ void handle_sigwinch(int unused __attribute__((unused))) {
 
 void handle_sigcont(int unused __attribute__((unused))) {
     disable_raw_mode(STDIN_FILENO);
+    console_buffer_open();
     enable_raw_mode(STDIN_FILENO);
     editor_refresh_screen();
 }
