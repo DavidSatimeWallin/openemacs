@@ -32,8 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define KILO_VERSION "0.0.1"
-
 #define _BSD_SOURCE
 #define _GNU_SOURCE
 #define _DEFAULT_SOURCE
@@ -873,20 +871,7 @@ void editorRefreshScreen(void) {
         int filerow = E.rowoff+y;
 
         if (filerow >= E.numrows) {
-            if (E.numrows == 0 && y == E.screenrows/3) {
-                char welcome[80];
-                int welcomelen = snprintf(welcome,sizeof(welcome),
-                    "Kilo editor -- verison %s\x1b[0K\r\n", KILO_VERSION);
-                int padding = (E.screencols-welcomelen)/2;
-                if (padding) {
-                    abAppend(&ab,"~",1);
-                    padding--;
-                }
-                while (padding--) abAppend(&ab," ",1);
-                abAppend(&ab,welcome,welcomelen);
-            } else {
-                abAppend(&ab,"~\x1b[0K\r\n",7);
-            }
+            abAppend(&ab,"~\x1b[0K\r\n",7);
             continue;
         }
 
