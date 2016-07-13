@@ -619,16 +619,15 @@ void editor_del_row(int at) {
 char *editor_rows_to_string(int *buflen) {
     char *buf = NULL, *p;
     int totlen = 0;
-    int j;
 
     /* Compute count of bytes */
-    for (j = 0; j < E.numrows; j++)
+    for (int j = 0; j < E.numrows; j++)
         totlen += E.row[j].size+1; /* +1 is for "\n" at end of every row */
     *buflen = totlen;
     totlen++; /* Also make space for nulterm */
 
     p = buf = malloc(totlen);
-    for (j = 0; j < E.numrows; j++) {
+    for (int j = 0; j < E.numrows; j++) {
         memcpy(p,E.row[j].chars,E.row[j].size);
         p += E.row[j].size;
         *p = '\n';
@@ -860,14 +859,13 @@ void abuf_free(struct abuf *ab) {
 /* This function writes the whole screen using VT100 escape characters
  * starting from the logical state of the editor in the global state 'E'. */
 void editor_refresh_screen(void) {
-    int y;
     erow *r;
     char buf[32];
     struct abuf ab = ABUF_INIT;
 
     abuf_append(&ab,"\x1b[?25l",6); /* Hide cursor. */
     abuf_append(&ab,"\x1b[H",3);    /* Go home. */
-    for (y = 0; y < E.screenrows; y++) {
+    for (int y = 0; y < E.screenrows; y++) {
         int filerow = E.rowoff+y;
 
         if (filerow >= E.numrows) {
@@ -883,8 +881,7 @@ void editor_refresh_screen(void) {
             if (len > E.screencols) len = E.screencols;
             char *c = r->render+E.coloff;
             unsigned char *hl = r->hl+E.coloff;
-            int j;
-            for (j = 0; j < len; j++) {
+            for (int j = 0; j < len; j++) {
                 if (hl[j] == HL_NONPRINT) {
                     char sym;
                     abuf_append(&ab,"\x1b[7m",4);
@@ -947,12 +944,11 @@ void editor_refresh_screen(void) {
     /* Put cursor at its current position. Note that the horizontal position
      * at which the cursor is displayed may be different compared to 'E.cx'
      * because of TABs. */
-    int j;
     int cx = 1;
     int filerow = E.rowoff+E.cy;
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
     if (row) {
-        for (j = E.coloff; j < (E.cx+E.coloff); j++) {
+        for (int j = E.coloff; j < (E.cx+E.coloff); j++) {
             if (j < row->size && row->chars[j] == TAB) cx += 7-((cx)%8);
             cx++;
         }
