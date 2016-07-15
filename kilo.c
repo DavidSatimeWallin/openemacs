@@ -316,40 +316,15 @@ int get_cursor_position(int ifd, int ofd, int *rows, int *cols) {
     return 0;
 }
 
-/* Try to get the number of columns in the current terminal. If the ioctl()
- * call fails the function will try to query the terminal itself.
+/* Try to get the number of columns in the current terminal.
  * Returns 0 on success, -1 on error. */
-int get_window_size(int ifd, int ofd, int *rows, int *cols) {
+int get_window_size(int *rows, int *cols) {
     struct winsize ws;
-
-    if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0) {
-        /* ioctl() failed. Try to query the terminal itself. */
-        int orig_row, orig_col, retval;
-
-        /* Get the initial position so we can restore it later. */
-        retval = get_cursor_position(ifd, ofd, &orig_row, &orig_col);
-        if (retval == -1) goto failed;
-
-        /* Go to right/bottom margin and get position. */
-        if (write(ofd, "\x1b[999C\x1b[999B", 12) != 12) goto failed;
-        retval = get_cursor_position(ifd, ofd, rows, cols);
-        if (retval == -1) goto failed;
-
-        /* Restore position. */
-        char seq[32];
-        snprintf(seq, 32, "\x1b[%d;%dH", orig_row, orig_col);
-        if (write(ofd, seq, strlen(seq)) == -1) {
-            /* Can't recover... */
-        }
-        return 0;
-    } else {
-        *cols = ws.ws_col;
-        *rows = ws.ws_row;
-        return 0;
-    }
-
-failed:
-    return -1;
+    if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+        return -1;
+    *cols = ws.ws_col;
+    *rows = ws.ws_row;
+    return 0;
 }
 
 /* ====================== Syntax highlight color scheme  ==================== */
@@ -1248,7 +1223,7 @@ int editor_file_was_modified(void) {
 }
 
 void update_window_size(void) {
-    if (get_window_size(STDIN_FILENO, STDOUT_FILENO, &E.screenrows, &E.screencols) == -1) {
+    if (get_window_size(&E.screenrows, &E.screencols) == -1) {
         perror("Unable to query the screen for size (columns/rows)");
         exit(1);
     }
