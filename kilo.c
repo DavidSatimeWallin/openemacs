@@ -1228,6 +1228,9 @@ void editor_process_keypress(int fd) {
     case ESC:
         /* Nothing to do for ESC in this mode. */
         break;
+    case TAB:
+        for (int i = 0; i < 4; i++) editor_insert_char(' ');
+        break;
     default:
         editor_insert_char(c);
         break;
