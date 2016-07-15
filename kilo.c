@@ -1061,7 +1061,7 @@ void editor_find(int fd) {
                     saved_hl_line = current;
                     saved_hl = malloc(row->rsize);
                     memcpy(saved_hl, row->hl, row->rsize);
-                    memset(row->hl+match_offset, HL_MATCH, qlen);
+                    memset(row->hl + match_offset, HL_MATCH, qlen);
                 }
                 E.cy = 0;
                 E.cx = match_offset;
