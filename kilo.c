@@ -103,22 +103,22 @@ static struct editor_config E;
 
 enum KEY_ACTION {
         KEY_NULL = 0,       /* NULL */
-        CTRL_A = 1,         /* Ctrl-a */
-        CTRL_C = 3,         /* Ctrl-c */
-        CTRL_D = 4,         /* Ctrl-d */
-        CTRL_E = 5,         /* Ctrl-e */
-        CTRL_F = 6,         /* Ctrl-f */
-        BACKSPACE = 8,      /* Backspace */
-        TAB = 9,            /* Tab */
-        CTRL_L = 12,        /* Ctrl-l */
-        ENTER = 13,         /* Enter */
-        CTRL_Q = 17,        /* Ctrl-q */
-        CTRL_S = 19,        /* Ctrl-s */
-        CTRL_U = 21,        /* Ctrl-u */
-        CTRL_X = 24,        /* Ctrl-x */
-        CTRL_Z = 26,        /* Ctrl-z */
-        ESC = 27,           /* Escape */
-        FORWARD_DELETE =  127, /* Forward delete */
+        CTRL_A = 1,         /* ctrl-a */
+        CTRL_C = 3,         /* ctrl-c */
+        CTRL_D = 4,         /* ctrl-d */
+        CTRL_E = 5,         /* ctrl-e */
+        CTRL_F = 6,         /* ctrl-f */
+        BACKSPACE = 8,      /* backspace */
+        TAB = 9,            /* tab */
+        CTRL_L = 12,        /* ctrl-l */
+        ENTER = 13,         /* enter */
+        CTRL_Q = 17,        /* ctrl-q */
+        CTRL_S = 19,        /* ctrl-s */
+        CTRL_U = 21,        /* ctrl-u */
+        CTRL_X = 24,        /* ctrl-x */
+        CTRL_Z = 26,        /* ctrl-z */
+        ESC = 27,           /* escape */
+        FORWARD_DELETE =  127, /* forward delete */
         /* The following are just soft codes, not really reported by the
          * terminal directly. */
         ARROW_LEFT = 1000,
@@ -1170,7 +1170,7 @@ void console_buffer_close(void) {
  * is typing stuff on the terminal. */
 #define KILO_QUIT_TIMES 3
 void editor_process_keypress(int fd) {
-    /* When the file is modified, requires Ctrl-q to be pressed N times
+    /* When the file is modified, requires ctrl-q to be pressed N times
      * before actually quitting. */
     static int quit_times = KILO_QUIT_TIMES;
 
@@ -1185,7 +1185,7 @@ void editor_process_keypress(int fd) {
     case CTRL_C: case CTRL_Q:
         /* Quit if the file was already saved. */
         if (E.dirty && quit_times) {
-            editor_set_status_message("WARNING! File has unsaved changes. Press Ctrl-Q %d more times to quit.", quit_times);
+            editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-q %d more times to quit.", quit_times);
             quit_times--;
             return;
         } else {
@@ -1296,7 +1296,7 @@ int main(int argc, char **argv) {
     editor_select_syntax_highlight(argv[1]);
     editor_open(argv[1]);
     enable_raw_mode(STDIN_FILENO);
-    editor_set_status_message("HELP: Ctrl-S = save | Ctrl-Q = quit | Ctrl-F = find");
+    editor_set_status_message("Commands: ctrl-s = Save | ctrl-q = Quit | ctrl-f = Find");
     while (1) {
         editor_refresh_screen();
         editor_process_keypress(STDIN_FILENO);
