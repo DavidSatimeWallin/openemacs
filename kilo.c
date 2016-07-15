@@ -221,7 +221,7 @@ int enable_raw_mode(int fd) {
     raw.c_oflag &= ~(OPOST);
     /* control modes - set 8 bit chars */
     raw.c_cflag |= (CS8);
-    /* local modes - choing off, canonical off, no extended functions,
+    /* local modes - echoing off, canonical off, no extended functions,
      * no signal chars (^Z,^C) */
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     /* control chars - set return condition: min number of bytes and timer. */
@@ -496,7 +496,7 @@ void editor_update_syntax(erow *row) {
         p++; i++;
     }
 
-    /* Propagate syntax change to the next row if the open commen
+    /* Propagate syntax change to the next row if the open comment
      * state changed. This may recursively affect all the following rows
      * in the file. */
     int oc = editor_row_has_open_comment(row);
@@ -686,7 +686,7 @@ void editor_insert_char(int c) {
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     /* If the row where the cursor is currently located does not exist in our
-     * logical representaion of the file, add enough empty rows as needed. */
+     * logical representation of the file, add enough empty rows as needed. */
     if (!row) {
         while (E.numrows <= filerow)
             editor_insert_row(E.numrows, "", 0);
