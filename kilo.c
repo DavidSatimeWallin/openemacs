@@ -83,10 +83,6 @@ typedef struct erow {
     int hl_oc;          /* Row had open comment at end in last syntax highlight check. */
 } erow;
 
-typedef struct hlcolor {
-    int r, g, b;
-} hlcolor;
-
 struct editor_config {
     int cx, cy;     /* Cursor x and y position in characters */
     int rowoff;     /* Offset of row displayed. */
@@ -167,7 +163,7 @@ char *C_HL_keywords[] = {
         "struct", "union", "typedef", "static", "enum", "class",
         /* C types */
         "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-        "void|", NULL
+        "void|", "#include|", "#define|", "#ifdef|", "#endif|", NULL
 };
 
 /* Here we define an array of syntax highlights by extensions, keywords,
@@ -225,7 +221,7 @@ int enable_raw_mode(int fd) {
     raw.c_oflag &= ~(OPOST);
     /* control modes - set 8 bit chars */
     raw.c_cflag |= (CS8);
-    /* local modes - choing off, canonical off, no extended functions,
+    /* local modes - echoing off, canonical off, no extended functions,
      * no signal chars (^Z,^C) */
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
     /* control chars - set return condition: min number of bytes and timer. */
@@ -500,7 +496,7 @@ void editor_update_syntax(erow *row) {
         p++; i++;
     }
 
-    /* Propagate syntax change to the next row if the open commen
+    /* Propagate syntax change to the next row if the open comment
      * state changed. This may recursively affect all the following rows
      * in the file. */
     int oc = editor_row_has_open_comment(row);
@@ -690,7 +686,7 @@ void editor_insert_char(int c) {
     erow *row = (filerow >= E.numrows) ? NULL : &E.row[filerow];
 
     /* If the row where the cursor is currently located does not exist in our
-     * logical representaion of the file, add enough empty rows as needed. */
+     * logical representation of the file, add enough empty rows as needed. */
     if (!row) {
         while (E.numrows <= filerow)
             editor_insert_row(E.numrows, "", 0);
@@ -1065,7 +1061,7 @@ void editor_find(int fd) {
                     saved_hl_line = current;
                     saved_hl = malloc(row->rsize);
                     memcpy(saved_hl, row->hl, row->rsize);
-                    memset(row->hl+match_offset, HL_MATCH, qlen);
+                    memset(row->hl + match_offset, HL_MATCH, qlen);
                 }
                 E.cy = 0;
                 E.cx = match_offset;

@@ -13,6 +13,14 @@ Keys:
     CTRL-Q: Quit
     CTRL-F: Find string in file (ESC to exit search, arrows to navigate)
 
+Other keys:
+
+    CTRL-L: Redraw screen
+    CTRL-X: Does nothing (allows ^X^S, ^X^C for those with Emacs muscle memory out there)
+    CTRL-C: Quit (alternative keybinding to allow ^X^C)
+    CTRL-A: Go to the start of line
+    CTRL-E: Go to the end of line
+
 Kilo does not depend on any library (not even curses). It uses fairly standard
 VT100 (and similar terminals) escape sequences. The project is in alpha
 stage and was written in just a few hours taking code from my other two
