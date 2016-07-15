@@ -83,10 +83,6 @@ typedef struct erow {
     int hl_oc;          /* Row had open comment at end in last syntax highlight check. */
 } erow;
 
-typedef struct hlcolor {
-    int r, g, b;
-} hlcolor;
-
 struct editor_config {
     int cx, cy;     /* Cursor x and y position in characters */
     int rowoff;     /* Offset of row displayed. */
