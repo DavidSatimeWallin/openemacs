@@ -863,20 +863,12 @@ void editor_refresh_screen(void) {
     /* Create a two rows status. First row: */
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
-    char status[80], rstatus[80];
-    int len = snprintf(status, sizeof(status), "%.20s - %d lines %s", E.filename, E.number_of_rows, E.dirty ? "(modified)" : "");
-    int rlen = snprintf(rstatus, sizeof(rstatus), "%d/%d", E.row_offset + E.cursor_y + 1, E.number_of_rows);
+    char status[80];
+    int len = snprintf(status, sizeof(status), "%.20s%s - L%d/%d", E.filename, E.dirty ? " (modified)" : "", E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows);
     if (len > E.screen_columns) len = E.screen_columns;
     abuf_append(&ab, status, len);
-    while (len < E.screen_columns) {
-        if (E.screen_columns - len == rlen) {
-            abuf_append(&ab, rstatus, rlen);
-            break;
-        } else {
-            abuf_append(&ab, " ", 1);
-            len++;
-        }
-    }
+    while (len++ < E.screen_columns)
+        abuf_append(&ab, " ", 1);
     abuf_append(&ab, "\x1b[0m\r\n", 6);
 
     /* Second row depends on E.status_message and the status message update time. */
