@@ -72,34 +72,13 @@ struct editor_config {
 static struct editor_config E;
 
 enum KEY_ACTION {
-    KEY_NULL = 0,
-    CTRL_A = 1,
-    CTRL_C = 3,
-    CTRL_D = 4,
-    CTRL_E = 5,
-    CTRL_F = 6,
-    BACKSPACE = 8,
-    TAB = 9,
-    CTRL_L = 12,
-    ENTER = 13,
-    CTRL_Q = 17,
-    CTRL_S = 19,
-    CTRL_U = 21,
-    CTRL_X = 24,
-    CTRL_Z = 26,
-    ESC = 27,
-    FORWARD_DELETE =  127,
+    KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6,
+    BACKSPACE = 8, TAB = 9, CTRL_L = 12, ENTER = 13, CTRL_Q = 17, CTRL_S = 19,
+    CTRL_U = 21, CTRL_X = 24, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
     /* The following are just soft codes, not really reported by the
      * terminal directly. */
-    ARROW_LEFT = 1000,
-    ARROW_RIGHT,
-    ARROW_UP,
-    ARROW_DOWN,
-    DEL_KEY,
-    HOME_KEY,
-    END_KEY,
-    PAGE_UP,
-    PAGE_DOWN
+    ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, DEL_KEY, HOME_KEY,
+    END_KEY, PAGE_UP, PAGE_DOWN
 };
 
 void editor_set_status_message(const char *fmt, ...);
