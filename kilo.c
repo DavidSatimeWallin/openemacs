@@ -531,6 +531,8 @@ void editor_update_row(editor_row *row) {
         if (row->chars[j] == TAB) {
             row->render[local_index++] = ' ';
             while ((local_index + 1) % 8 != 0) row->render[local_index++] = ' ';
+        } else if (!isprint(row->chars[j])) {
+            row->render[local_index++] = '?';
         } else {
             row->render[local_index++] = row->chars[j];
         }
