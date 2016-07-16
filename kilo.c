@@ -788,16 +788,7 @@ void editor_refresh_screen(void) {
             char *c = r->rendered_chars + E.column_offset;
             unsigned char *rendered_chars_highlight_type = r->rendered_chars_highlight_type + E.column_offset;
             for (int j = 0; j < len; j++) {
-                if (rendered_chars_highlight_type[j] == HIGHLIGHT_NONPRINT) {
-                    char sym;
-                    abuf_append(&ab, "\x1b[7m", 4);
-                    if (c[j] <= 26)
-                        sym = '@' + c[j];
-                    else
-                        sym = '?';
-                    abuf_append(&ab, &sym, 1);
-                    abuf_append(&ab, "\x1b[0m", 4);
-                } else if (rendered_chars_highlight_type[j] == HIGHLIGHT_NORMAL) {
+                if (rendered_chars_highlight_type[j] == HIGHLIGHT_NORMAL) {
                     if (current_color != -1) {
                         abuf_append(&ab, "\x1b[39m", 5);
                         current_color = -1;
