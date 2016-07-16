@@ -32,8 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#define _BSD_SOURCE
-#define _GNU_SOURCE
 #define _DEFAULT_SOURCE
 
 #include <ctype.h>     /* isdigit, isspace */
