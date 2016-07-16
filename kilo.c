@@ -116,7 +116,7 @@ void editor_set_status_message(const char *fmt, ...);
  * a trailing '|' character is added at the end, they are highlighted in
  * a different color, so that you can have two different sets of keywords.
  *
- * Finally add a stanza in the HLDB global variable with two arrays
+ * Finally add a stanza in the HIGHLIGHT_DATABASE global variable with two arrays
  * of strings, and a set of flags in order to enable highlighting of
  * comments and numbers.
  *
@@ -147,7 +147,7 @@ char *PYTHON_HIGHLIGHT_KEYWORDS[] = {
 
 /* Here we define an array of syntax highlights by extensions, keywords,
  * comments delimiters and flags. */
-struct editor_syntax HLDB[] = {
+struct editor_syntax HIGHLIGHT_DATABASE[] = {
     {
         /* C/C++ */
         C_HIGHLIGHT_FILE_EXTENSIONS,
@@ -164,7 +164,7 @@ struct editor_syntax HLDB[] = {
     }
 };
 
-#define HLDB_ENTRIES (sizeof(HLDB) / sizeof(HLDB[0]))
+#define HIGHLIGHT_DATABASE_ENTRIES (sizeof(HIGHLIGHT_DATABASE) / sizeof(HIGHLIGHT_DATABASE[0]))
 
 /* ======================= Low level terminal handling ====================== */
 
@@ -481,8 +481,8 @@ int editor_syntax_to_color(int hl) {
 /* Select the syntax highlight scheme depending on the filename,
  * setting it in the global state E.syntax. */
 void editor_select_syntax_highlight(char *filename) {
-    for (unsigned int j = 0; j < HLDB_ENTRIES; j++) {
-        struct editor_syntax *s = HLDB + j;
+    for (unsigned int j = 0; j < HIGHLIGHT_DATABASE_ENTRIES; j++) {
+        struct editor_syntax *s = HIGHLIGHT_DATABASE + j;
         unsigned int i = 0;
         while (s->filematch[i]) {
             char *p;
