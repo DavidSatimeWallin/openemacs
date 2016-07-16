@@ -49,7 +49,7 @@ typedef struct editor_row {
     int size;                     /* Size of the row, excluding the null term. */
     int rendered_size;            /* Size of the rendered row. */
     char *chars;                  /* Row content. */
-    char *render;                 /* Row content "rendered" for screen (for TABs). */
+    char *rendered_chars;         /* Row content "rendered" for screen (for TABs). */
     unsigned char *hl;            /* Syntax highlight type for each character in render.*/
     int hl_oc;                    /* Row had open comment at end in last syntax highlight check. */
 } editor_row;
@@ -324,8 +324,8 @@ int is_separator(int c) {
  * of the row but spawns to the next row. */
 int editor_row_has_open_comment(editor_row *row) {
     if (row->hl && row->rendered_size && row->hl[row->rendered_size - 1] == HL_MLCOMMENT &&
-        (row->rendered_size < 2 || (row->render[row->rendered_size - 2] != '*' ||
-                                    row->render[row->rendered_size - 1] != '/'))) return 1;
+        (row->rendered_size < 2 || (row->rendered_chars[row->rendered_size - 2] != '*' ||
+                                    row->rendered_chars[row->rendered_size - 1] != '/'))) return 1;
     return 0;
 }
 
@@ -344,7 +344,7 @@ void editor_update_syntax(editor_row *row) {
     char *mce = E.syntax->multiline_comment_end;
 
     /* Point to the first non-space char. */
-    p = row->render;
+    p = row->rendered_chars;
     int i = 0; /* Current char offset */
     while (*p && isspace(*p)) {
         p++;
@@ -507,25 +507,25 @@ void editor_update_row(editor_row *row) {
 
    /* Create a version of the row we can directly print on the screen,
      * respecting tabs, substituting non printable characters with '?'. */
-    free(row->render);
+    free(row->rendered_chars);
     for (int i = 0; i < row->size; i++)
         if (row->chars[i] == TAB) tabs++;
 
     int nonprint = 0;
-    row->render = malloc(row->size + tabs * 8 + nonprint * 9 + 1);
+    row->rendered_chars = malloc(row->size + tabs * 8 + nonprint * 9 + 1);
     int local_index = 0;
     for (int j = 0; j < row->size; j++) {
         if (row->chars[j] == TAB) {
-            row->render[local_index++] = ' ';
-            while ((local_index + 1) % 8 != 0) row->render[local_index++] = ' ';
+            row->rendered_chars[local_index++] = ' ';
+            while ((local_index + 1) % 8 != 0) row->rendered_chars[local_index++] = ' ';
         } else if (!isprint(row->chars[j])) {
-            row->render[local_index++] = '?';
+            row->rendered_chars[local_index++] = '?';
         } else {
-            row->render[local_index++] = row->chars[j];
+            row->rendered_chars[local_index++] = row->chars[j];
         }
     }
     row->rendered_size = local_index;
-    row->render[local_index] = '\0';
+    row->rendered_chars[local_index] = '\0';
 
     /* Update the syntax highlighting attributes of the row. */
     editor_update_syntax(row);
@@ -545,7 +545,7 @@ void editor_insert_row(int at, char *s, size_t len) {
     memcpy(E.row[at].chars, s, len + 1);
     E.row[at].hl = NULL;
     E.row[at].hl_oc = 0;
-    E.row[at].render = NULL;
+    E.row[at].rendered_chars = NULL;
     E.row[at].rendered_size = 0;
     E.row[at].index_in_file = at;
     editor_update_row(E.row + at);
@@ -555,7 +555,7 @@ void editor_insert_row(int at, char *s, size_t len) {
 
 /* Free row's heap allocated stuff. */
 void editor_free_row(editor_row *row) {
-    free(row->render);
+    free(row->rendered_chars);
     free(row->chars);
     free(row->hl);
 }
@@ -841,7 +841,7 @@ void editor_refresh_screen(void) {
         int current_color = -1;
         if (len > 0) {
             if (len > E.screen_columns) len = E.screen_columns;
-            char *c = r->render + E.column_offset;
+            char *c = r->rendered_chars + E.column_offset;
             unsigned char *hl = r->hl + E.column_offset;
             for (int j = 0; j < len; j++) {
                 if (hl[j] == HL_NONPRINT) {
@@ -998,9 +998,9 @@ void editor_find(int fd) {
                 current += find_next;
                 if (current == -1) current = E.number_of_rows - 1;
                 else if (current == E.number_of_rows) current = 0;
-                match = strstr(E.row[current].render, query);
+                match = strstr(E.row[current].rendered_chars, query);
                 if (match) {
-                    match_offset = match - E.row[current].render;
+                    match_offset = match - E.row[current].rendered_chars;
                     break;
                 }
             }
