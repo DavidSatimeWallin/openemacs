@@ -864,7 +864,7 @@ void editor_refresh_screen(void) {
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
     char status[80];
-    int len = snprintf(status, sizeof(status), "%.20s%s - L%d/%d", E.filename, E.dirty ? " (modified)" : "", E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows);
+    int len = snprintf(status, sizeof(status), "%.20s%s - L%d/%d (%d %%)", E.filename, E.dirty ? " (modified)" : "", E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0 && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100);
     if (len > E.screen_columns) len = E.screen_columns;
     abuf_append(&ab, status, len);
     while (len++ < E.screen_columns)
@@ -1172,7 +1172,7 @@ void editor_process_keypress(int fd) {
         break;
     default:
         if (c >= 0 && c <= 31) {
-            editor_set_status_message("Unrecognized command: ASCII %i", c);
+            editor_set_status_message("Unrecognized command: ASCII %d", c);
             break;
         }
         editor_insert_char(c);
