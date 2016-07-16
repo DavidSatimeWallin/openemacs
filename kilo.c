@@ -155,22 +155,22 @@ void editor_set_status_message(const char *fmt, ...);
  *
  * There is no support to highlight patterns currently. */
 
-/* C / C++ */
+/* C/C++ */
 char *C_HL_extensions[] = { ".c", ".cpp", NULL };
 char *C_HL_keywords[] = {
-        /* A few C / C++ keywords */
-        "switch", "if", "while", "for", "break", "continue", "return", "else",
-        "struct", "union", "typedef", "static", "enum", "class",
-        /* C types */
-        "int|", "long|", "double|", "float|", "char|", "unsigned|", "signed|",
-        "void|", "#include|", "#define|", "#ifdef|", "#endif|", NULL
+    /* C/C++ keywords */
+    "auto", "break", "case", "class", "const", "continue", "default", "do", "else", "enum", "extern", "for", "goto", "if", "return", "sizeof", "static", "struct", "switch", "register", "return", "typedef", "union", "volatile", "while",
+    /* C types */
+    "char|", "double|", "float|", "int|", "long|", "short|", "signed|", "unsigned|", "void|",
+    /* C preprocessor directives */
+    "#define|", "#endif|", "#error|", "#ifdef|", "#ifndef|", "#if|", "#include|", "#undef|", NULL
 };
 
 /* Here we define an array of syntax highlights by extensions, keywords,
  * comments delimiters and flags. */
 struct editor_syntax HLDB[] = {
     {
-        /* C / C++ */
+        /* C/C++ */
         C_HL_extensions,
         C_HL_keywords,
         "//", "/*", "*/",
