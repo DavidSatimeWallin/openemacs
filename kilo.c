@@ -926,18 +926,12 @@ void editor_set_status_message(const char *fmt, ...) {
 
 #define KILO_QUERY_LEN 256
 
-void end_of_line() {
+/* Move cursor to X position (0: start of line, -1 == end of line) */
+void editor_move_cursor_to_x_position(int i) {
     int file_row = E.row_offset + E.cursor_y;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row)
-        E.cursor_x = row->size;
-}
-
-void start_of_line() {
-    int file_row = E.row_offset + E.cursor_y;
-    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    if (row)
-        E.cursor_x = 0;
+        E.cursor_x = i == -1 ? row->size : 0;
 }
 
 void editor_find(int fd) {
@@ -1036,7 +1030,7 @@ void editor_find(int fd) {
 /* ========================= Editor events handling  ======================== */
 
 /* Handle cursor position change because arrow keys were pressed. */
-void editor_move_cursor(int key) {
+void editor_move_cursor_to_y_position_by_arrow_key_input(int key) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
     int rowlen;
@@ -1135,7 +1129,8 @@ void editor_process_keypress(int fd) {
         editor_insert_newline();
         break;
     case CTRL_A:
-        start_of_line();
+        /* Go to start of line */
+        editor_move_cursor_to_x_position(0);
         break;
     case CTRL_C: case CTRL_Q:
         /* Quit if the file was already saved. */
@@ -1152,7 +1147,8 @@ void editor_process_keypress(int fd) {
         editor_save();
         break;
     case CTRL_E:
-        end_of_line();
+        /* Go to end of line */
+        editor_move_cursor_to_x_position(-1);
         break;
     case CTRL_F:
         editor_find(fd);
@@ -1167,10 +1163,10 @@ void editor_process_keypress(int fd) {
             E.cursor_y = E.screen_rows - 1;
         int times = E.screen_rows - 2;
         while (times--)
-            editor_move_cursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+            editor_move_cursor_to_y_position_by_arrow_key_input(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
     case ARROW_UP: case ARROW_DOWN: case ARROW_LEFT: case ARROW_RIGHT:
-        editor_move_cursor(c);
+        editor_move_cursor_to_y_position_by_arrow_key_input(c);
         break;
     case CTRL_X: case CTRL_L:
         /* Just refresh the line as side effect. */
