@@ -1186,7 +1186,7 @@ void editor_process_keypress(int fd) {
             E.cursor_y = 0;
         else if (c == PAGE_DOWN && E.cursor_y != E.screen_rows - 1)
             E.cursor_y = E.screen_rows - 1;
-        int times = E.screen_rows;
+        int times = E.screen_rows - 2;
         while (times--)
             editor_move_cursor(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
