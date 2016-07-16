@@ -296,13 +296,12 @@ int editor_read_key(int fd) {
  * and return it. On error -1 is returned, on success the position of the
  * cursor is stored at *rows and *columns and 0 is returned. */
 int get_cursor_position(int ifd, int ofd, int *rows, int *columns) {
-    char buf[32];
-    unsigned int i = 0;
-
     /* Report cursor location */
     if (write(ofd, "\x1b[6n", 4) != 4) return -1;
 
     /* Read the response: ESC [ rows ; columns R */
+    unsigned int i = 0;
+    char buf[32];
     while (i < sizeof(buf) - 1) {
         if (read(ifd, buf + i, 1) != 1) break;
         if (buf[i] == 'R') break;
@@ -339,7 +338,7 @@ int is_separator(int c) {
 int editor_row_has_open_comment(editor_row *row) {
     if (row->hl && row->rendered_size && row->hl[row->rendered_size - 1] == HL_MLCOMMENT &&
         (row->rendered_size < 2 || (row->render[row->rendered_size - 2] != '*' ||
-                            row->render[row->rendered_size - 1] != '/'))) return 1;
+				    row->render[row->rendered_size - 1] != '/'))) return 1;
     return 0;
 }
 
