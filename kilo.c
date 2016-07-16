@@ -338,7 +338,7 @@ int is_separator(int c) {
 int editor_row_has_open_comment(editor_row *row) {
     if (row->hl && row->rendered_size && row->hl[row->rendered_size - 1] == HL_MLCOMMENT &&
         (row->rendered_size < 2 || (row->render[row->rendered_size - 2] != '*' ||
-				    row->render[row->rendered_size - 1] != '/'))) return 1;
+                                    row->render[row->rendered_size - 1] != '/'))) return 1;
     return 0;
 }
 
