@@ -25,8 +25,8 @@
 #define HIGHLIGHT_NONPRINT 1
 #define HIGHLIGHT_SINGLE_LINE_COMMENT 2
 #define HIGHLIGHT_MULTI_LINE_COMMENT 3
-#define HIGHLIGHT_KEYWORD1 4
-#define HIGHLIGHT_KEYWORD2 5
+#define HIGHLIGHT_KEYWORD_1 4
+#define HIGHLIGHT_KEYWORD_2 5
 #define HIGHLIGHT_STRING 6
 #define HIGHLIGHT_NUMBER 7
 #define HIGHLIGHT_SEARCH_MATCH 8
@@ -438,7 +438,7 @@ void editor_update_syntax(editor_row *row) {
 
                 if (!memcmp(p, keywords[j], klen) && is_separator(*(p + klen))) {
                     /* Keyword */
-                    memset(row->hl + i, kw2 ? HIGHLIGHT_KEYWORD2 : HIGHLIGHT_KEYWORD1, klen);
+                    memset(row->hl + i, kw2 ? HIGHLIGHT_KEYWORD_2 : HIGHLIGHT_KEYWORD_1, klen);
                     p += klen;
                     i += klen;
                     break;
@@ -469,8 +469,8 @@ int editor_syntax_to_color(int hl) {
     switch (hl) {
     case HIGHLIGHT_SINGLE_LINE_COMMENT:
     case HIGHLIGHT_MULTI_LINE_COMMENT: return 31; /* normal red */
-    case HIGHLIGHT_KEYWORD1: return 35;           /* normal magenta */
-    case HIGHLIGHT_KEYWORD2: return 32;           /* normal green */
+    case HIGHLIGHT_KEYWORD_1: return 35;          /* normal magenta */
+    case HIGHLIGHT_KEYWORD_2: return 32;          /* normal green */
     case HIGHLIGHT_STRING: return 95;             /* bright magenta */
     case HIGHLIGHT_NUMBER: return 97;             /* bright white */
     case HIGHLIGHT_SEARCH_MATCH: return 34;       /* normal blue */
