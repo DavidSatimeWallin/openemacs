@@ -153,11 +153,11 @@ void editor_set_status_message(const char *fmt, ...);
  *
  * There is no support to highlight patterns currently. */
 
-/* C/C++ */
+/* C/C++ ("class" being C++ only) */
 char *C_HL_extensions[] = { ".c", ".cpp", NULL };
 char *C_HL_keywords[] = {
     /* C/C++ keywords */
-    "auto", "break", "case", "class", "const", "continue", "default", "do", "else", "enum", "extern", "for", "goto", "if", "return", "sizeof", "static", "struct", "switch", "register", "return", "typedef", "union", "volatile", "while",
+    "auto", "break", "case", "class", "const", "continue", "default", "do", "else", "enum", "extern", "for", "goto", "if", "register", "return", "sizeof", "static", "struct", "switch", "typedef", "union", "volatile", "while",
     /* C types */
     "char|", "double|", "float|", "int|", "long|", "short|", "signed|", "unsigned|", "void|",
     /* C preprocessor directives */
