@@ -73,7 +73,7 @@ struct editor_syntax {
 };
 
 /* This structure represents a single line of the file we are editing. */
-typedef struct erow {
+typedef struct editor_row {
     int index_in_file;            /* Row index in the file, zero-based. */
     int size;                     /* Size of the row, excluding the null term. */
     int rendered_size;            /* Size of the rendered row. */
@@ -81,17 +81,17 @@ typedef struct erow {
     char *render;                 /* Row content "rendered" for screen (for TABs). */
     unsigned char *hl;            /* Syntax highlight type for each character in render.*/
     int hl_oc;                    /* Row had open comment at end in last syntax highlight check. */
-} erow;
+} editor_row;
 
 struct editor_config {
     int cursor_x, cursor_y;       /* Cursor x and y position in characters */
     int row_offset;               /* Offset of row displayed. */
     int column_offset;            /* Offset of column displayed. */
     int screen_rows;              /* Number of rows that we can show */
-    int screen_columns;           /* Number of cols that we can show */
+    int screen_columns;           /* Number of columns that we can show */
     int number_of_rows;           /* Number of rows */
     int raw_mode;                 /* Is terminal raw mode enabled? */
-    erow *row;                    /* Rows */
+    editor_row *row;              /* Rows */
     int dirty;                    /* File modified but not saved. */
     char *filename;               /* Currently open filename */
     char status_message[80];
@@ -294,15 +294,15 @@ int editor_read_key(int fd) {
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
- * cursor is stored at *rows and *cols and 0 is returned. */
-int get_cursor_position(int ifd, int ofd, int *rows, int *cols) {
+ * cursor is stored at *rows and *columns and 0 is returned. */
+int get_cursor_position(int ifd, int ofd, int *rows, int *columns) {
     char buf[32];
     unsigned int i = 0;
 
     /* Report cursor location */
     if (write(ofd, "\x1b[6n", 4) != 4) return -1;
 
-    /* Read the response: ESC [ rows ; cols R */
+    /* Read the response: ESC [ rows ; columns R */
     while (i < sizeof(buf) - 1) {
         if (read(ifd, buf + i, 1) != 1) break;
         if (buf[i] == 'R') break;
@@ -312,17 +312,17 @@ int get_cursor_position(int ifd, int ofd, int *rows, int *cols) {
 
     /* Parse it. */
     if (buf[0] != ESC || buf[1] != '[') return -1;
-    if (sscanf(buf + 2, "%d;%d", rows, cols) != 2) return -1;
+    if (sscanf(buf + 2, "%d;%d", rows, columns) != 2) return -1;
     return 0;
 }
 
 /* Try to get the number of columns in the current terminal.
  * Returns 0 on success, -1 on error. */
-int get_window_size(int *rows, int *cols) {
+int get_window_size(int *rows, int *columns) {
     struct winsize ws;
     if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
         return -1;
-    *cols = ws.ws_col;
+    *columns = ws.ws_col;
     *rows = ws.ws_row;
     return 0;
 }
@@ -336,7 +336,7 @@ int is_separator(int c) {
 /* Return true if the specified row last char is part of a multi line comment
  * that starts at this row or at one before, and does not end at the end
  * of the row but spawns to the next row. */
-int editor_row_has_open_comment(erow *row) {
+int editor_row_has_open_comment(editor_row *row) {
     if (row->hl && row->rendered_size && row->hl[row->rendered_size - 1] == HL_MLCOMMENT &&
         (row->rendered_size < 2 || (row->render[row->rendered_size - 2] != '*' ||
                             row->render[row->rendered_size - 1] != '/'))) return 1;
@@ -345,13 +345,12 @@ int editor_row_has_open_comment(erow *row) {
 
 /* Set every byte of row->hl (that corresponds to every character in the line)
  * to the right syntax highlight type (HL_* defines). */
-void editor_update_syntax(erow *row) {
+void editor_update_syntax(editor_row *row) {
     row->hl = realloc(row->hl, row->rendered_size);
     memset(row->hl, HL_NORMAL, row->rendered_size);
 
     if (E.syntax == NULL) return; /* No syntax, everything is HL_NORMAL. */
 
-    int i, prev_sep, in_string, in_comment;
     char *p;
     char **keywords = E.syntax->keywords;
     char *scs = E.syntax->singleline_comment_start;
@@ -360,14 +359,14 @@ void editor_update_syntax(erow *row) {
 
     /* Point to the first non-space char. */
     p = row->render;
-    i = 0; /* Current char offset */
+    int i = 0; /* Current char offset */
     while (*p && isspace(*p)) {
         p++;
         i++;
     }
-    prev_sep = 1; /* Tell the parser if 'i' points to start of word. */
-    in_string = 0; /* Are we inside "" or '' ? */
-    in_comment = 0; /* Are we inside multi-line comment? */
+    int prev_sep = 1; /* Tell the parser if 'i' points to start of word. */
+    int in_string = 0; /* Are we inside "" or '' ? */
+    int in_comment = 0; /* Are we inside multi-line comment? */
 
     /* If the previous line has an open comment, this line starts
      * with an open comment state. */
@@ -517,7 +516,7 @@ void editor_select_syntax_highlight(char *filename) {
 /* ======================= Editor rows implementation ======================= */
 
 /* Update the rendered version and the syntax highlight of a row. */
-void editor_update_row(erow *row) {
+void editor_update_row(editor_row *row) {
     int tabs = 0;
 
    /* Create a version of the row we can directly print on the screen,
@@ -548,7 +547,7 @@ void editor_update_row(erow *row) {
  * if required. */
 void editor_insert_row(int at, char *s, size_t len) {
     if (at > E.number_of_rows) return;
-    E.row = realloc(E.row, sizeof(erow) * (E.number_of_rows + 1));
+    E.row = realloc(E.row, sizeof(editor_row) * (E.number_of_rows + 1));
     if (at != E.number_of_rows) {
         memmove(E.row + at + 1, E.row + at, sizeof(E.row[0]) * (E.number_of_rows - at));
         for (int j = at + 1; j <= E.number_of_rows; j++) E.row[j].index_in_file++;
@@ -567,7 +566,7 @@ void editor_insert_row(int at, char *s, size_t len) {
 }
 
 /* Free row's heap allocated stuff. */
-void editor_free_row(erow *row) {
+void editor_free_row(editor_row *row) {
     free(row->render);
     free(row->chars);
     free(row->hl);
@@ -575,8 +574,8 @@ void editor_free_row(erow *row) {
 
 /* Remove the row at the specified position, shifting the remaining on the
  * top. */
-void editor_del_row(int at) {
-    erow *row;
+void editor_delete_row(int at) {
+    editor_row *row;
 
     if (at >= E.number_of_rows) return;
     row = E.row + at;
@@ -614,7 +613,7 @@ char *editor_rows_to_string(int *buflen) {
 
 /* Insert a character at the specified position in a row, moving the remaining
  * chars on the right if needed. */
-void editor_row_insert_char(erow *row, int at, int c) {
+void editor_row_insert_char(editor_row *row, int at, int c) {
     if (at > row->size) {
         /* Pad the string with spaces if the insert location is outside the
          * current length by more than a single character. */
@@ -637,7 +636,7 @@ void editor_row_insert_char(erow *row, int at, int c) {
 }
 
 /* Append the string 's' at the end of a row */
-void editor_row_append_string(erow *row, char *s, size_t len) {
+void editor_row_append_string(editor_row *row, char *s, size_t len) {
     row->chars = realloc(row->chars, row->size + len + 1);
     memcpy(row->chars + row->size, s, len);
     row->size += len;
@@ -647,7 +646,7 @@ void editor_row_append_string(erow *row, char *s, size_t len) {
 }
 
 /* Delete the character at offset 'at' from the specified row. */
-void editor_row_del_char(erow *row, int at) {
+void editor_row_delete_char(editor_row *row, int at) {
     if (row->size <= at) return;
     memmove(row->chars + at, row->chars + at + 1, row->size - at);
     editor_update_row(row);
@@ -657,18 +656,18 @@ void editor_row_del_char(erow *row, int at) {
 
 /* Insert the specified char at the current prompt position. */
 void editor_insert_char(int c) {
-    int filerow = E.row_offset + E.cursor_y;
-    int filecol = E.column_offset + E.cursor_x;
-    erow *row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+    int file_row = E.row_offset + E.cursor_y;
+    int file_column = E.column_offset + E.cursor_x;
+    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
 
     /* If the row where the cursor is currently located does not exist in our
      * logical representation of the file, add enough empty rows as needed. */
     if (!row) {
-        while (E.number_of_rows <= filerow)
+        while (E.number_of_rows <= file_row)
             editor_insert_row(E.number_of_rows, "", 0);
     }
-    row = &E.row[filerow];
-    editor_row_insert_char(row, filecol, c);
+    row = &E.row[file_row];
+    editor_row_insert_char(row, file_column, c);
     if (E.cursor_x == E.screen_columns - 1)
         E.column_offset++;
     else
@@ -679,28 +678,28 @@ void editor_insert_char(int c) {
 /* Inserting a newline is slightly complex as we have to handle inserting a
  * newline in the middle of a line, splitting the line as needed. */
 void editor_insert_newline(void) {
-    int filerow = E.row_offset + E.cursor_y;
-    int filecol = E.column_offset + E.cursor_x;
-    erow *row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+    int file_row = E.row_offset + E.cursor_y;
+    int file_column = E.column_offset + E.cursor_x;
+    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
 
     if (!row) {
-        if (filerow == E.number_of_rows) {
-            editor_insert_row(filerow, "", 0);
+        if (file_row == E.number_of_rows) {
+            editor_insert_row(file_row, "", 0);
             goto fixcursor;
         }
         return;
     }
     /* If the cursor is over the current line size, we want to conceptually
      * think it's just over the last character. */
-    if (filecol >= row->size) filecol = row->size;
-    if (filecol == 0) {
-        editor_insert_row(filerow, "", 0);
+    if (file_column >= row->size) file_column = row->size;
+    if (file_column == 0) {
+        editor_insert_row(file_row, "", 0);
     } else {
         /* We are in the middle of a line. Split it between two rows. */
-        editor_insert_row(filerow + 1, row->chars + filecol, row->size - filecol);
-        row = &E.row[filerow];
-        row->chars[filecol] = '\0';
-        row->size = filecol;
+        editor_insert_row(file_row + 1, row->chars + file_column, row->size - file_column);
+        row = &E.row[file_row];
+        row->chars[file_column] = '\0';
+        row->size = file_column;
         editor_update_row(row);
     }
 fixcursor:
@@ -714,31 +713,31 @@ fixcursor:
 }
 
 /* Delete the char at the current prompt position. */
-void editor_del_char() {
-    int filerow = E.row_offset + E.cursor_y;
-    int filecol = E.column_offset + E.cursor_x;
-    erow *row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+void editor_delete_char() {
+    int file_row = E.row_offset + E.cursor_y;
+    int file_column = E.column_offset + E.cursor_x;
+    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
 
-    if (!row || (filecol == 0 && filerow == 0)) return;
-    if (filecol == 0) {
+    if (!row || (file_column == 0 && file_row == 0)) return;
+    if (file_column == 0) {
         /* Handle the case of column 0, we need to move the current line
          * on the right of the previous one. */
-        filecol = E.row[filerow - 1].size;
-        editor_row_append_string(&E.row[filerow - 1], row->chars, row->size);
-        editor_del_row(filerow);
+        file_column = E.row[file_row - 1].size;
+        editor_row_append_string(&E.row[file_row - 1], row->chars, row->size);
+        editor_delete_row(file_row);
         row = NULL;
         if (E.cursor_y == 0)
             E.row_offset--;
         else
             E.cursor_y--;
-        E.cursor_x = filecol;
+        E.cursor_x = file_column;
         if (E.cursor_x >= E.screen_columns) {
             int shift = (E.screen_columns - E.cursor_x) + 1;
             E.cursor_x -= shift;
             E.column_offset += shift;
         }
     } else {
-        editor_row_del_char(row, filecol - 1);
+        editor_row_delete_char(row, file_column - 1);
         if (E.cursor_x == 0 && E.column_offset)
             E.column_offset--;
         else
@@ -811,14 +810,14 @@ writeerr:
  * allocated string where we can append to. This is useful in order to
  * write all the escape sequences in a buffer and flush them to the standard
  * output in a single call, to avoid flickering effects. */
-struct abuf {
+struct append_buffer {
     char *b;
     int len;
 };
 
-#define ABUF_INIT {NULL, 0}
+#define APPEND_BUFFER_INIT { NULL, 0 }
 
-void abuf_append(struct abuf *ab, const char *s, int len) {
+void abuf_append(struct append_buffer *ab, const char *s, int len) {
     char *new = realloc(ab->b, ab->len + len);
 
     if (new == NULL) return;
@@ -827,28 +826,28 @@ void abuf_append(struct abuf *ab, const char *s, int len) {
     ab->len += len;
 }
 
-void abuf_free(struct abuf *ab) {
+void abuf_free(struct append_buffer *ab) {
     free(ab->b);
 }
 
 /* This function writes the whole screen using VT100 escape characters
  * starting from the logical state of the editor in the global state 'E'. */
 void editor_refresh_screen(void) {
-    erow *r;
+    editor_row *r;
     char buf[32];
-    struct abuf ab = ABUF_INIT;
+    struct append_buffer ab = APPEND_BUFFER_INIT;
 
     abuf_append(&ab, "\x1b[?25l", 6); /* Hide cursor. */
     abuf_append(&ab, "\x1b[H", 3);    /* Go home. */
     for (int y = 0; y < E.screen_rows; y++) {
-        int filerow = E.row_offset + y;
+        int file_row = E.row_offset + y;
 
-        if (filerow >= E.number_of_rows) {
+        if (file_row >= E.number_of_rows) {
             abuf_append(&ab, "~\x1b[0K\r\n", 7);
             continue;
         }
 
-        r = &E.row[filerow];
+        r = &E.row[file_row];
 
         int len = r->rendered_size - E.column_offset;
         int current_color = -1;
@@ -918,8 +917,8 @@ void editor_refresh_screen(void) {
      * at which the cursor is displayed may be different compared to 'E.cursor_x'
      * because of TABs. */
     int cx = 1;
-    int filerow = E.row_offset + E.cursor_y;
-    erow *row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+    int file_row = E.row_offset + E.cursor_y;
+    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row) {
         for (int j = E.column_offset; j < (E.cursor_x + E.column_offset); j++) {
             if (j < row->size && row->chars[j] == TAB) cx += 7 - ((cx) % 8);
@@ -948,21 +947,21 @@ void editor_set_status_message(const char *fmt, ...) {
 #define KILO_QUERY_LEN 256
 
 void end_of_line() {
-    int filerow = E.row_offset + E.cursor_y;
-    erow *row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+    int file_row = E.row_offset + E.cursor_y;
+    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row)
         E.cursor_x = row->size;
 }
 
 void start_of_line() {
-    int filerow = E.row_offset + E.cursor_y;
-    erow *row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+    int file_row = E.row_offset + E.cursor_y;
+    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row)
         E.cursor_x = 0;
 }
 
 void editor_find(int fd) {
-    char query[KILO_QUERY_LEN + 1] = {0};
+    char query[KILO_QUERY_LEN + 1] = { 0 };
     int qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
     int find_next = 0; /* if 1 search next, if -1 search prev. */
@@ -1031,7 +1030,7 @@ void editor_find(int fd) {
             FIND_RESTORE_HL;
 
             if (match) {
-                erow *row = &E.row[current];
+                editor_row *row = &E.row[current];
                 last_match = current;
                 if (row->hl) {
                     saved_hl_line = current;
@@ -1058,10 +1057,10 @@ void editor_find(int fd) {
 
 /* Handle cursor position change because arrow keys were pressed. */
 void editor_move_cursor(int key) {
-    int filerow = E.row_offset + E.cursor_y;
-    int filecol = E.column_offset + E.cursor_x;
+    int file_row = E.row_offset + E.cursor_y;
+    int file_column = E.column_offset + E.cursor_x;
     int rowlen;
-    erow *row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+    editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
 
     switch (key) {
     case ARROW_LEFT:
@@ -1069,9 +1068,9 @@ void editor_move_cursor(int key) {
             if (E.column_offset) {
                 E.column_offset--;
             } else {
-                if (filerow > 0) {
+                if (file_row > 0) {
                     E.cursor_y--;
-                    E.cursor_x = E.row[filerow - 1].size;
+                    E.cursor_x = E.row[file_row - 1].size;
                     if (E.cursor_x > E.screen_columns - 1) {
                         E.column_offset = E.cursor_x - E.screen_columns + 1;
                         E.cursor_x = E.screen_columns - 1;
@@ -1083,13 +1082,13 @@ void editor_move_cursor(int key) {
         }
         break;
     case ARROW_RIGHT:
-        if (row && filecol < row->size) {
+        if (row && file_column < row->size) {
             if (E.cursor_x == E.screen_columns - 1) {
                 E.column_offset++;
             } else {
                 E.cursor_x += 1;
             }
-        } else if (row && filecol == row->size) {
+        } else if (row && file_column == row->size) {
             E.cursor_x = 0;
             E.column_offset = 0;
             if (E.cursor_y == E.screen_rows - 1) {
@@ -1107,7 +1106,7 @@ void editor_move_cursor(int key) {
         }
         break;
     case ARROW_DOWN:
-        if (filerow < E.number_of_rows) {
+        if (file_row < E.number_of_rows) {
             if (E.cursor_y == E.screen_rows - 1) {
                 E.row_offset++;
             } else {
@@ -1117,12 +1116,12 @@ void editor_move_cursor(int key) {
         break;
     }
     /* Fix cx if the current line has not enough chars. */
-    filerow = E.row_offset + E.cursor_y;
-    filecol = E.column_offset + E.cursor_x;
-    row = (filerow >= E.number_of_rows) ? NULL : &E.row[filerow];
+    file_row = E.row_offset + E.cursor_y;
+    file_column = E.column_offset + E.cursor_x;
+    row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     rowlen = row ? row->size : 0;
-    if (filecol > rowlen) {
-        E.cursor_x -= filecol - rowlen;
+    if (file_column > rowlen) {
+        E.cursor_x -= file_column - rowlen;
         if (E.cursor_x < 0) {
             E.column_offset += E.cursor_x;
             E.cursor_x = 0;
@@ -1135,7 +1134,7 @@ void console_buffer_close(void) {
     write(STDOUT_FILENO, "\x1b[?9l", 5);
     write(STDOUT_FILENO, "\x1b[?47l", 6);
     char buf[32];
-    struct abuf ab = ABUF_INIT;
+    struct append_buffer ab = APPEND_BUFFER_INIT;
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1);
     abuf_append(&ab, buf, strlen(buf));
     write(STDOUT_FILENO, ab.b, ab.len);
@@ -1179,7 +1178,7 @@ void editor_process_keypress(int fd) {
         editor_find(fd);
         break;
     case FORWARD_DELETE: case BACKSPACE: case DEL_KEY:
-        editor_del_char();
+        editor_delete_char();
         break;
     case PAGE_UP: case PAGE_DOWN:
         if (c == PAGE_UP && E.cursor_y != 0)
