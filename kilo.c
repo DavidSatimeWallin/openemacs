@@ -137,6 +137,15 @@ char *C_HL_keywords[] = {
     "#define|", "#endif|", "#error|", "#ifdef|", "#ifndef|", "#if|", "#include|", "#undef|", NULL
 };
 
+/* Python */
+char *Py_HL_extensions[] = { ".py", NULL };
+char *Py_HL_keywords[] = {
+    /* Python keywords */
+    "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", "except", "exec", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "not", "or", "pass", "print", "raise", "return", "try", "while", "with", "yield",
+    /* Python types */
+    "buffer|", "bytearray|", "complex|", "False|", "float|", "frozenset|", "int|", "list|", "long|", "None|", "set|", "str|", "tuple|", "True|", "type|", "unicode|", "xrange|", NULL
+};
+
 /* Here we define an array of syntax highlights by extensions, keywords,
  * comments delimiters and flags. */
 struct editor_syntax HLDB[] = {
@@ -145,6 +154,13 @@ struct editor_syntax HLDB[] = {
         C_HL_extensions,
         C_HL_keywords,
         "//", "/*", "*/",
+        HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS
+    },
+    {
+        /* Python */
+        Py_HL_extensions,
+        Py_HL_keywords,
+        "# ", "", "",
         HL_HIGHLIGHT_STRINGS | HL_HIGHLIGHT_NUMBERS
     }
 };
