@@ -30,11 +30,11 @@
 #define HIGHLIGHT_STRING 6
 #define HIGHLIGHT_NUMBER 7
 #define HIGHLIGHT_SEARCH_MATCH 8
-#define HIGHLIGHT_HIGHLIGHT_STRINGS (1 << 0)
-#define HIGHLIGHT_HIGHLIGHT_NUMBERS (1 << 1)
+#define HIGHLIGHT_STRINGS (1 << 0)
+#define HIGHLIGHT_NUMBERS (1 << 1)
 
 struct editor_syntax {
-    char **filematch;
+    char **file_match;
     char **keywords;
     char singleline_comment_start[2];
     char multiline_comment_start[3];
@@ -49,8 +49,8 @@ typedef struct editor_row {
     int rendered_size;            /* Size of the rendered row. */
     char *chars;                  /* Row content. */
     char *rendered_chars;         /* Row content "rendered" for screen (for TABs). */
-    unsigned char *hl;            /* Syntax highlight type for each character in render.*/
-    int hl_oc;                    /* Row had open comment at end in last syntax highlight check. */
+    unsigned char *rendered_chars_highlight_type; /* Syntax highlight type for each character in render.*/
+    int has_open_comment;         /* Row had open comment at end in last syntax highlight check. */
 } editor_row;
 
 struct editor_config {
@@ -153,14 +153,14 @@ struct editor_syntax HIGHLIGHT_DATABASE[] = {
         C_HIGHLIGHT_FILE_EXTENSIONS,
         C_HIGHLIGHT_KEYWORDS,
         "//", "/*", "*/",
-        HIGHLIGHT_HIGHLIGHT_STRINGS | HIGHLIGHT_HIGHLIGHT_NUMBERS
+        HIGHLIGHT_STRINGS | HIGHLIGHT_NUMBERS
     },
     {
         /* Python */
         PYTHON_HIGHLIGHT_FILE_EXTENSIONS,
         PYTHON_HIGHLIGHT_KEYWORDS,
         "# ", "", "",
-        HIGHLIGHT_HIGHLIGHT_STRINGS | HIGHLIGHT_HIGHLIGHT_NUMBERS
+        HIGHLIGHT_STRINGS | HIGHLIGHT_NUMBERS
     }
 };
 
@@ -277,7 +277,6 @@ int editor_read_key(int fd) {
         }
     }
 }
-
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor is stored at *rows and *columns and 0 is returned. */
@@ -322,17 +321,18 @@ int is_separator(int c) {
  * that starts at this row or at one before, and does not end at the end
  * of the row but spawns to the next row. */
 int editor_row_has_open_comment(editor_row *row) {
-    if (row->hl && row->rendered_size && row->hl[row->rendered_size - 1] == HIGHLIGHT_MULTI_LINE_COMMENT &&
+    if (row->rendered_chars_highlight_type && row->rendered_size && row->rendered_chars_highlight_type[row->rendered_size - 1] == HIGHLIGHT_MULTI_LINE_COMMENT &&
         (row->rendered_size < 2 || (row->rendered_chars[row->rendered_size - 2] != '*' ||
                                     row->rendered_chars[row->rendered_size - 1] != '/'))) return 1;
     return 0;
 }
 
-/* Set every byte of row->hl (that corresponds to every character in the line)
- * to the right syntax highlight type (HIGHLIGHT_* defines). */
+/* Set every byte of row->rendered_chars_highlight_type (that corresponds to
+ * every character in the line) to the right syntax highlight type
+ * (HIGHLIGHT_* defines). */
 void editor_update_syntax(editor_row *row) {
-    row->hl = realloc(row->hl, row->rendered_size);
-    memset(row->hl, HIGHLIGHT_NORMAL, row->rendered_size);
+    row->rendered_chars_highlight_type = realloc(row->rendered_chars_highlight_type, row->rendered_size);
+    memset(row->rendered_chars_highlight_type, HIGHLIGHT_NORMAL, row->rendered_size);
 
     if (E.syntax == NULL) return; /* No syntax, everything is HIGHLIGHT_NORMAL. */
 
@@ -362,15 +362,15 @@ void editor_update_syntax(editor_row *row) {
         /* Handle // comments. */
         if (prev_sep && *p == scs[0] && *(p + 1) == scs[1]) {
             /* From here to end is a comment */
-            memset(row->hl + i, HIGHLIGHT_SINGLE_LINE_COMMENT, row->size - i);
+            memset(row->rendered_chars_highlight_type + i, HIGHLIGHT_SINGLE_LINE_COMMENT, row->size - i);
             return;
         }
 
         /* Handle multi line comments. */
         if (in_comment) {
-            row->hl[i] = HIGHLIGHT_MULTI_LINE_COMMENT;
+            row->rendered_chars_highlight_type[i] = HIGHLIGHT_MULTI_LINE_COMMENT;
             if (*p == mce[0] && *(p + 1) == mce[1]) {
-                row->hl[i + 1] = HIGHLIGHT_MULTI_LINE_COMMENT;
+                row->rendered_chars_highlight_type[i + 1] = HIGHLIGHT_MULTI_LINE_COMMENT;
                 p += 2; i += 2;
                 in_comment = 0;
                 prev_sep = 1;
@@ -381,8 +381,8 @@ void editor_update_syntax(editor_row *row) {
                 continue;
             }
         } else if (*p == mcs[0] && *(p + 1) == mcs[1]) {
-            row->hl[i] = HIGHLIGHT_MULTI_LINE_COMMENT;
-            row->hl[i + 1] = HIGHLIGHT_MULTI_LINE_COMMENT;
+            row->rendered_chars_highlight_type[i] = HIGHLIGHT_MULTI_LINE_COMMENT;
+            row->rendered_chars_highlight_type[i + 1] = HIGHLIGHT_MULTI_LINE_COMMENT;
             p += 2; i += 2;
             in_comment = 1;
             prev_sep = 0;
@@ -391,9 +391,9 @@ void editor_update_syntax(editor_row *row) {
 
         /* Handle "" and '' */
         if (in_string) {
-            row->hl[i] = HIGHLIGHT_STRING;
+            row->rendered_chars_highlight_type[i] = HIGHLIGHT_STRING;
             if (*p == '\\') {
-                row->hl[i + 1] = HIGHLIGHT_STRING;
+                row->rendered_chars_highlight_type[i + 1] = HIGHLIGHT_STRING;
                 p += 2; i += 2;
                 prev_sep = 0;
                 continue;
@@ -404,7 +404,7 @@ void editor_update_syntax(editor_row *row) {
         } else {
             if (*p == '"' || *p == '\'') {
                 in_string = *p;
-                row->hl[i] = HIGHLIGHT_STRING;
+                row->rendered_chars_highlight_type[i] = HIGHLIGHT_STRING;
                 p++; i++;
                 prev_sep = 0;
                 continue;
@@ -413,16 +413,16 @@ void editor_update_syntax(editor_row *row) {
 
         /* Handle non printable chars. */
         if (!isprint(*p)) {
-            row->hl[i] = HIGHLIGHT_NONPRINT;
+            row->rendered_chars_highlight_type[i] = HIGHLIGHT_NONPRINT;
             p++; i++;
             prev_sep = 0;
             continue;
         }
 
         /* Handle numbers */
-        if ((isdigit(*p) && (prev_sep || row->hl[i - 1] == HIGHLIGHT_NUMBER)) ||
-            (*p == '.' && i > 0 && row->hl[i - 1] == HIGHLIGHT_NUMBER)) {
-            row->hl[i] = HIGHLIGHT_NUMBER;
+        if ((isdigit(*p) && (prev_sep || row->rendered_chars_highlight_type[i - 1] == HIGHLIGHT_NUMBER)) ||
+            (*p == '.' && i > 0 && row->rendered_chars_highlight_type[i - 1] == HIGHLIGHT_NUMBER)) {
+            row->rendered_chars_highlight_type[i] = HIGHLIGHT_NUMBER;
             p++; i++;
             prev_sep = 0;
             continue;
@@ -438,7 +438,7 @@ void editor_update_syntax(editor_row *row) {
 
                 if (!memcmp(p, keywords[j], klen) && is_separator(*(p + klen))) {
                     /* Keyword */
-                    memset(row->hl + i, kw2 ? HIGHLIGHT_KEYWORD_2 : HIGHLIGHT_KEYWORD_1, klen);
+                    memset(row->rendered_chars_highlight_type + i, kw2 ? HIGHLIGHT_KEYWORD_2 : HIGHLIGHT_KEYWORD_1, klen);
                     p += klen;
                     i += klen;
                     break;
@@ -459,9 +459,9 @@ void editor_update_syntax(editor_row *row) {
      * state changed. This may recursively affect all the following rows
      * in the file. */
     int oc = editor_row_has_open_comment(row);
-    if (row->hl_oc != oc && row->index_in_file + 1 < E.number_of_rows)
+    if (row->has_open_comment != oc && row->index_in_file + 1 < E.number_of_rows)
         editor_update_syntax(&E.row[row->index_in_file + 1]);
-    row->hl_oc = oc;
+    row->has_open_comment = oc;
 }
 
 /* Maps syntax highlight token types to terminal colors. */
@@ -484,11 +484,11 @@ void editor_select_syntax_highlight(char *filename) {
     for (unsigned int j = 0; j < HIGHLIGHT_DATABASE_ENTRIES; j++) {
         struct editor_syntax *s = HIGHLIGHT_DATABASE + j;
         unsigned int i = 0;
-        while (s->filematch[i]) {
+        while (s->file_match[i]) {
             char *p;
-            int patlen = strlen(s->filematch[i]);
-            if ((p = strstr(filename, s->filematch[i])) != NULL) {
-                if (s->filematch[i][0] != '.' || p[patlen] == '\0') {
+            int patlen = strlen(s->file_match[i]);
+            if ((p = strstr(filename, s->file_match[i])) != NULL) {
+                if (s->file_match[i][0] != '.' || p[patlen] == '\0') {
                     E.syntax = s;
                     return;
                 }
@@ -542,8 +542,8 @@ void editor_insert_row(int at, char *s, size_t len) {
     E.row[at].size = len;
     E.row[at].chars = malloc(len + 1);
     memcpy(E.row[at].chars, s, len + 1);
-    E.row[at].hl = NULL;
-    E.row[at].hl_oc = 0;
+    E.row[at].rendered_chars_highlight_type = NULL;
+    E.row[at].has_open_comment = 0;
     E.row[at].rendered_chars = NULL;
     E.row[at].rendered_size = 0;
     E.row[at].index_in_file = at;
@@ -556,7 +556,7 @@ void editor_insert_row(int at, char *s, size_t len) {
 void editor_free_row(editor_row *row) {
     free(row->rendered_chars);
     free(row->chars);
-    free(row->hl);
+    free(row->rendered_chars_highlight_type);
 }
 
 /* Remove the row at the specified position, shifting the remaining on the
@@ -841,9 +841,9 @@ void editor_refresh_screen(void) {
         if (len > 0) {
             if (len > E.screen_columns) len = E.screen_columns;
             char *c = r->rendered_chars + E.column_offset;
-            unsigned char *hl = r->hl + E.column_offset;
+            unsigned char *rendered_chars_highlight_type = r->rendered_chars_highlight_type + E.column_offset;
             for (int j = 0; j < len; j++) {
-                if (hl[j] == HIGHLIGHT_NONPRINT) {
+                if (rendered_chars_highlight_type[j] == HIGHLIGHT_NONPRINT) {
                     char sym;
                     abuf_append(&ab, "\x1b[7m", 4);
                     if (c[j] <= 26)
@@ -852,14 +852,14 @@ void editor_refresh_screen(void) {
                         sym = '?';
                     abuf_append(&ab, &sym, 1);
                     abuf_append(&ab, "\x1b[0m", 4);
-                } else if (hl[j] == HIGHLIGHT_NORMAL) {
+                } else if (rendered_chars_highlight_type[j] == HIGHLIGHT_NORMAL) {
                     if (current_color != -1) {
                         abuf_append(&ab, "\x1b[39m", 5);
                         current_color = -1;
                     }
                     abuf_append(&ab, c + j, 1);
                 } else {
-                    int color = editor_syntax_to_color(hl[j]);
+                    int color = editor_syntax_to_color(rendered_chars_highlight_type[j]);
                     if (color != current_color) {
                         char buf[16];
                         int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", color);
@@ -943,7 +943,7 @@ void editor_find(int fd) {
 
 #define FIND_RESTORE_HL do { \
     if (saved_hl) { \
-        memcpy(E.row[saved_hl_line].hl, saved_hl, E.row[saved_hl_line].rendered_size); \
+        memcpy(E.row[saved_hl_line].rendered_chars_highlight_type, saved_hl, E.row[saved_hl_line].rendered_size); \
         saved_hl = NULL; \
     } \
 } while (0)
@@ -1005,11 +1005,11 @@ void editor_find(int fd) {
             if (match) {
                 editor_row *row = &E.row[current];
                 last_match = current;
-                if (row->hl) {
+                if (row->rendered_chars_highlight_type) {
                     saved_hl_line = current;
                     saved_hl = malloc(row->rendered_size);
-                    memcpy(saved_hl, row->hl, row->rendered_size);
-                    memset(row->hl + match_offset, HIGHLIGHT_SEARCH_MATCH, qlen);
+                    memcpy(saved_hl, row->rendered_chars_highlight_type, row->rendered_size);
+                    memset(row->rendered_chars_highlight_type + match_offset, HIGHLIGHT_SEARCH_MATCH, qlen);
                 }
                 E.cursor_y = 0;
                 E.cursor_x = match_offset;
