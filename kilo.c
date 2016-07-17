@@ -135,8 +135,8 @@ char *PYTHON_HIGHLIGHT_KEYWORDS[] = {
 /* Here we define an array of syntax highlights by extensions, keywords,
  * comments delimiters and flags. */
 struct editor_syntax HIGHLIGHT_DATABASE[] = {
-    { C_HIGHLIGHT_FILE_EXTENSIONS, C_HIGHLIGHT_KEYWORDS, "//", "/*", "*/", HIGHLIGHT_STRINGS | HIGHLIGHT_NUMBERS },
-    { PYTHON_HIGHLIGHT_FILE_EXTENSIONS, PYTHON_HIGHLIGHT_KEYWORDS, "# ", "", "", HIGHLIGHT_STRINGS | HIGHLIGHT_NUMBERS }
+    { C_HIGHLIGHT_FILE_EXTENSIONS,      C_HIGHLIGHT_KEYWORDS,      "//", "/*", "*/", HIGHLIGHT_STRINGS | HIGHLIGHT_NUMBERS },
+    { PYTHON_HIGHLIGHT_FILE_EXTENSIONS, PYTHON_HIGHLIGHT_KEYWORDS, "# ", "",   "",   HIGHLIGHT_STRINGS | HIGHLIGHT_NUMBERS }
 };
 
 #define HIGHLIGHT_DATABASE_ENTRIES (sizeof(HIGHLIGHT_DATABASE) / sizeof(HIGHLIGHT_DATABASE[0]))
@@ -825,7 +825,7 @@ void editor_refresh_screen(void) {
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
     char status[80];
-    int len = snprintf(status, sizeof(status), "%.20s%s - L%d/%d (%d %%)", E.filename, E.dirty ? " (modified)" : "",
+    int len = snprintf(status, sizeof(status), "%.20s%s - C%d L%d/%d (%d %%)", E.filename, E.dirty ? " (modified)" : "", E.cursor_x + 1,
                        E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0
                        && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100);
     if (len > E.screen_columns) len = E.screen_columns;
