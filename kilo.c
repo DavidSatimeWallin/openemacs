@@ -68,7 +68,7 @@ static struct editor_config E;
 
 enum KEY_ACTION {
     KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6,
-    BACKSPACE = 8, TAB = 9, CTRL_L = 12, ENTER = 13, CTRL_N = 14, CTRL_P = 16,
+    BACKSPACE = 8, TAB = 9, CTRL_L = 12, ENTER = 13, CTRL_N = 14, CTRL_P = 16, CTRL_R = 18,
     CTRL_S = 19, CTRL_U = 21, CTRL_X = 24, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
     /* The following are just soft codes, not really reported by the
      * terminal directly. */
@@ -868,9 +868,9 @@ void editor_find(int fd) {
             FIND_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
             editor_set_status_message("");
             return;
-        } else if (c == ARROW_RIGHT || c == ARROW_DOWN) {
+        } else if (c == ARROW_RIGHT || c == ARROW_DOWN || c == CTRL_S) {
             find_next = 1;
-        } else if (c == ARROW_LEFT || c == ARROW_UP) {
+        } else if (c == ARROW_LEFT || c == ARROW_UP || c == CTRL_R) {
             find_next = -1;
         } else if (isprint(c)) {
             if (qlen < SEARCH_QUERY_LENGTH) {
