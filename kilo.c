@@ -21,16 +21,13 @@
 #include <unistd.h>    /* close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write */
 
 #define SYNTAX_HIGHLIGHT_TYPE_NORMAL 0
-#define SYNTAX_HIGHLIGHT_TYPE_NONPRINT 1
-#define SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT 2
-#define SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT 3
-#define SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1 4
-#define SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 5
-#define SYNTAX_HIGHLIGHT_TYPE_STRING 6
-#define SYNTAX_HIGHLIGHT_TYPE_NUMBER 7
-#define SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH 8
-#define SYNTAX_HIGHLIGHT_TYPE_STRINGS (1 << 0)
-#define SYNTAX_HIGHLIGHT_TYPE_NUMBERS (1 << 1)
+#define SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT 1
+#define SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT 2
+#define SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1 3
+#define SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 4
+#define SYNTAX_HIGHLIGHT_TYPE_STRING 5
+#define SYNTAX_HIGHLIGHT_TYPE_NUMBER 6
+#define SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH 7
 
 struct editor_syntax {
     char **file_match;
@@ -38,7 +35,6 @@ struct editor_syntax {
     char singleline_comment_start[2];
     char multiline_comment_start[3];
     char multiline_comment_end[3];
-    int flags;
 };
 
 /* This structure represents a single line of the file we are editing. */
@@ -134,8 +130,8 @@ char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
 /* Here we define an array of syntax highlights by extensions, keywords,
  * comments delimiters and flags. */
 struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
-    { C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS,      C_SYNTAX_HIGHLIGHT_KEYWORDS,      "//", "/*", "*/", SYNTAX_HIGHLIGHT_TYPE_STRINGS | SYNTAX_HIGHLIGHT_TYPE_NUMBERS },
-    { PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, "# ", "",   "",   SYNTAX_HIGHLIGHT_TYPE_STRINGS | SYNTAX_HIGHLIGHT_TYPE_NUMBERS }
+    { C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS,      C_SYNTAX_HIGHLIGHT_KEYWORDS,      "//", "/*", "*/" },
+    { PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, "# ", "",   ""   }
 };
 
 #define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
@@ -383,14 +379,6 @@ void editor_update_syntax(editor_row *row) {
                 prev_sep = 0;
                 continue;
             }
-        }
-        /* Handle non printable chars. */
-        if (!isprint(*p)) {
-            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_NONPRINT;
-            p++;
-            i++;
-            prev_sep = 0;
-            continue;
         }
         /* Handle numbers */
         if ((isdigit(*p) && (prev_sep || row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_TYPE_NUMBER)) ||
