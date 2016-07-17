@@ -200,11 +200,11 @@ fatal:
  * escape sequences. */
 int editor_read_key(int fd) {
     int nread;
-    char c, seq[3];
-    while ((nread = read(fd, &c, 1)) == 0);
+    char key, seq[3];
+    while ((nread = read(fd, &key, 1)) == 0);
     if (nread == -1) exit(1);
     while (1) {
-        switch (c) {
+        switch (key) {
         case ESC: /* escape sequence */
             /* If this is just an ESC, we'll timeout here. */
             if (read(fd, seq, 1) == 0) return ESC;
@@ -252,7 +252,7 @@ int editor_read_key(int fd) {
             }
             break;
         default:
-            return c;
+            return key;
         }
     }
 }
@@ -1048,8 +1048,10 @@ void editor_process_keypress(int fd) {
     /* When the file is modified, requires ctrl-c to be pressed N times
      * before actually quitting. */
     static int quit_times = KILO_QUIT_CONFIRMATIONS;
-    int c = editor_read_key(fd);
-    switch (c) {
+    static int previous_key = -1;
+
+    int key = editor_read_key(fd);
+    switch (key) {
     case ENTER:
         editor_insert_newline();
         break;
@@ -1058,6 +1060,7 @@ void editor_process_keypress(int fd) {
         editor_move_cursor_to_x_position(0);
         break;
     case CTRL_C:
+        if (previous_key != CTRL_X) break;
         /* Quit if the file was already saved. */
         if (E.dirty && quit_times) {
             editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-c %d more times to quit.", quit_times);
@@ -1069,14 +1072,14 @@ void editor_process_keypress(int fd) {
         }
         break;
     case CTRL_S:
-        editor_save();
+        if (previous_key == CTRL_X)
+            editor_save();
+        else
+            editor_find(fd);
         break;
     case CTRL_E:
         /* Go to end of line */
         editor_move_cursor_to_x_position(-1);
-        break;
-    case CTRL_F:
-        editor_find(fd);
         break;
     case BACKSPACE:
     case DEL_KEY:
@@ -1085,13 +1088,13 @@ void editor_process_keypress(int fd) {
         break;
     case PAGE_DOWN:
     case PAGE_UP:
-        if (c == PAGE_UP && E.cursor_y != 0)
+        if (key == PAGE_UP && E.cursor_y != 0)
             E.cursor_y = 0;
-        else if (c == PAGE_DOWN && E.cursor_y != E.screen_rows - 1)
+        else if (key == PAGE_DOWN && E.cursor_y != E.screen_rows - 1)
             E.cursor_y = E.screen_rows - 1;
         int times = E.screen_rows - 2;
         while (times--)
-            editor_move_cursor_to_y_position_by_arrow_key_input(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+            editor_move_cursor_to_y_position_by_arrow_key_input(key == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
     case ARROW_DOWN:
     case ARROW_LEFT:
@@ -1099,7 +1102,7 @@ void editor_process_keypress(int fd) {
     case ARROW_UP:
     case CTRL_N:
     case CTRL_P:
-        editor_move_cursor_to_y_position_by_arrow_key_input(c);
+        editor_move_cursor_to_y_position_by_arrow_key_input(key);
         break;
     case CTRL_L:
     case CTRL_X:
@@ -1117,14 +1120,15 @@ void editor_process_keypress(int fd) {
         for (int i = 0; i < 4; i++) editor_insert_char(' ');
         break;
     default:
-        if (c >= 0 && c <= 31) {
-            editor_set_status_message("Unrecognized command: ASCII %d", c);
+        if (key >= 0 && key <= 31) {
+            editor_set_status_message("Unrecognized command: ASCII %d", key);
             break;
         }
-        editor_insert_char(c);
+        editor_insert_char(key);
         break;
     }
     quit_times = KILO_QUIT_CONFIRMATIONS; /* Reset it to the original value. */
+    previous_key = key;
 }
 
 int editor_file_was_modified(void) {
@@ -1179,7 +1183,7 @@ int main(int argc, char **argv) {
     editor_select_syntax_highlight(argv[1]);
     editor_open(argv[1]);
     enable_raw_mode(STDIN_FILENO);
-    editor_set_status_message("Commands: ctrl-s = Save | ctrl-c = Quit | ctrl-f = Find");
+    editor_set_status_message("Commands: ctrl-s = Find | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
     while (1) {
         editor_refresh_screen();
         editor_process_keypress(STDIN_FILENO);
