@@ -825,9 +825,9 @@ void editor_refresh_screen(void) {
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
     char status[80];
-    int len = snprintf(status, sizeof(status), "%.20s%s - C%d L%d/%d (%d %%)", E.filename, E.dirty ? " (modified)" : "", E.cursor_x + 1,
+    int len = snprintf(status, sizeof(status), "Editing: %.20s%s | Line: %d/%d (%d %%) | Column: %d", E.filename, E.dirty ? " (modified)" : "",
                        E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0
-                       && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100);
+                       && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100, E.cursor_x + 1);
     if (len > E.screen_columns) len = E.screen_columns;
     abuf_append(&ab, status, len);
     while (len++ < E.screen_columns)
