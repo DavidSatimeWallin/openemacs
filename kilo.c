@@ -73,7 +73,7 @@ static struct editor_config E;
 
 enum KEY_ACTION {
     KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6,
-    BACKSPACE = 8, TAB = 9, CTRL_L = 12, CTRL_N = 14, ENTER = 13, CTRL_P = 16,
+    BACKSPACE = 8, TAB = 9, CTRL_L = 12, ENTER = 13, CTRL_N = 14, CTRL_P = 16,
     CTRL_S = 19, CTRL_U = 21, CTRL_X = 24, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
     /* The following are just soft codes, not really reported by the
      * terminal directly. */
