@@ -615,7 +615,7 @@ void editor_insert_newline(void) {
     if (!row) {
         if (file_row == E.number_of_rows) {
             editor_insert_row(file_row, "", 0);
-            goto fixcursor;
+            goto fix_cursor;
         }
         return;
     }
@@ -632,7 +632,7 @@ void editor_insert_newline(void) {
         row->size = file_column;
         editor_update_row(row);
     }
-fixcursor:
+fix_cursor:
     if (E.cursor_y == E.screen_rows - 1) {
         E.row_offset++;
     } else {
@@ -695,8 +695,7 @@ int editor_open(char *filename) {
     size_t linecap = 0;
     ssize_t linelen;
     while ((linelen = getline(&line, &linecap, fp)) != -1) {
-        if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r'))
-            line[--linelen] = '\0';
+        if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) line[--linelen] = '\0';
         editor_insert_row(E.number_of_rows, line, linelen);
     }
     free(line);
@@ -710,18 +709,18 @@ int editor_save(void) {
     int len;
     char *buf = editor_rows_to_string(&len);
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
-    if (fd == -1) goto writeerr;
+    if (fd == -1) goto write_error;
     /* Use truncate + a single write(2) call in order to make saving
      * a bit safer, under the limits of what we can do in a small editor. */
-    if (ftruncate(fd, len) == -1) goto writeerr;
-    if (write(fd, buf, len) != len) goto writeerr;
+    if (ftruncate(fd, len) == -1) goto write_error;
+    if (write(fd, buf, len) != len) goto write_error;
     close(fd);
     free(buf);
     E.dirty = 0;
     editor_set_status_message("Wrote %s (%d bytes)", E.filename, len);
     return 0;
 
-writeerr:
+write_error:
     free(buf);
     if (fd != -1) close(fd);
     editor_set_status_message("Can't save! I/O error: %s", strerror(errno));
@@ -818,12 +817,11 @@ void editor_refresh_screen(void) {
     int cx = 1;
     int file_row = E.row_offset + E.cursor_y;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    if (row) {
+    if (row)
         for (int j = E.column_offset; j < (E.cursor_x + E.column_offset); j++) {
             if (j < row->size && row->chars[j] == TAB) cx += 7 - ((cx) % 8);
             cx++;
         }
-    }
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cursor_y + 1, cx);
     abuf_append(&ab, buf, strlen(buf));
     abuf_append(&ab, "\x1b[?25h", 6); /* Show cursor. */
@@ -833,18 +831,17 @@ void editor_refresh_screen(void) {
 
 /* =============================== Find mode ================================ */
 
-#define KILO_QUERY_LEN 256
+#define KILO_SEARCH_QUERY_LENGTH 256
 
 /* Move cursor to X position (0: start of line, -1 == end of line) */
 void editor_move_cursor_to_x_position(int i) {
     int file_row = E.row_offset + E.cursor_y;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    if (row)
-        E.cursor_x = i == -1 ? row->size : 0;
+    if (row) E.cursor_x = i == -1 ? row->size : 0;
 }
 
 void editor_find(int fd) {
-    char query[KILO_QUERY_LEN + 1] = { 0 };
+    char query[KILO_SEARCH_QUERY_LENGTH + 1] = { 0 };
     int qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
     int find_next = 0; /* if 1 search next, if -1 search prev. */
@@ -879,7 +876,7 @@ void editor_find(int fd) {
         } else if (c == ARROW_LEFT || c == ARROW_UP) {
             find_next = -1;
         } else if (isprint(c)) {
-            if (qlen < KILO_QUERY_LEN) {
+            if (qlen < KILO_SEARCH_QUERY_LENGTH) {
                 query[qlen++] = c;
                 query[qlen] = '\0';
                 last_match = -1;
@@ -941,14 +938,12 @@ void editor_move_cursor_to_y_position_by_arrow_key_input(int key) {
         if (E.cursor_x == 0) {
             if (E.column_offset) {
                 E.column_offset--;
-            } else {
-                if (file_row > 0) {
-                    E.cursor_y--;
-                    E.cursor_x = E.row[file_row - 1].size;
-                    if (E.cursor_x > E.screen_columns - 1) {
-                        E.column_offset = E.cursor_x - E.screen_columns + 1;
-                        E.cursor_x = E.screen_columns - 1;
-                    }
+            } else if (file_row > 0) {
+                E.cursor_y--;
+                E.cursor_x = E.row[file_row - 1].size;
+                if (E.cursor_x > E.screen_columns - 1) {
+                    E.column_offset = E.cursor_x - E.screen_columns + 1;
+                    E.cursor_x = E.screen_columns - 1;
                 }
             }
         } else {
@@ -1017,11 +1012,11 @@ void console_buffer_close(void) {
 
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
-#define KILO_QUIT_TIMES 3
+#define KILO_QUIT_CONFIRMATIONS 3
 void editor_process_keypress(int fd) {
     /* When the file is modified, requires ctrl-q to be pressed N times
      * before actually quitting. */
-    static int quit_times = KILO_QUIT_TIMES;
+    static int quit_times = KILO_QUIT_CONFIRMATIONS;
     int c = editor_read_key(fd);
     switch (c) {
     case ENTER:
@@ -1089,7 +1084,7 @@ void editor_process_keypress(int fd) {
         editor_insert_char(c);
         break;
     }
-    quit_times = KILO_QUIT_TIMES; /* Reset it to the original value. */
+    quit_times = KILO_QUIT_CONFIRMATIONS; /* Reset it to the original value. */
 }
 
 int editor_file_was_modified(void) {
