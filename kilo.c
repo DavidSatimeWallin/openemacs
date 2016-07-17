@@ -81,7 +81,15 @@ enum KEY_ACTION {
     END_KEY, PAGE_UP, PAGE_DOWN
 };
 
-void editor_set_status_message(const char *fmt, ...);
+/* Set an editor status message for the second line of the status, at the
+ * end of the screen. */
+void editor_set_status_message(const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(E.status_message, sizeof(E.status_message), fmt, ap);
+    va_end(ap);
+    E.status_message_time = time(NULL);
+}
 
 /* =========================== Syntax highlights DB =========================
  *
@@ -821,16 +829,6 @@ void editor_refresh_screen(void) {
     abuf_append(&ab, "\x1b[?25h", 6); /* Show cursor. */
     if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed.");
     abuf_free(&ab);
-}
-
-/* Set an editor status message for the second line of the status, at the
- * end of the screen. */
-void editor_set_status_message(const char *fmt, ...) {
-    va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(E.status_message, sizeof(E.status_message), fmt, ap);
-    va_end(ap);
-    E.status_message_time = time(NULL);
 }
 
 /* =============================== Find mode ================================ */
