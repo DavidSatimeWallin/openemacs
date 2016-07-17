@@ -157,7 +157,7 @@ void console_buffer_open(void) {
     /* switch to another buffer in order to be able to restore state at exit
      * by calling console_buffer_close(void).
      */
-    if (write(STDOUT_FILENO, "\x1b[?47h", 6) == -1) perror("Write to stdout failed.");
+    if (write(STDOUT_FILENO, "\x1b[?47h", 6) == -1) perror("Write to stdout failed");
 }
 
 /* Raw mode: 1960 magic shit. */
@@ -820,7 +820,7 @@ void editor_refresh_screen(void) {
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cursor_y + 1, cx);
     abuf_append(&ab, buf, strlen(buf));
     abuf_append(&ab, "\x1b[?25h", 6); /* Show cursor. */
-    if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed.");
+    if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed");
     abuf_free(&ab);
 }
 
@@ -999,13 +999,13 @@ void editor_move_cursor_to_y_position_by_arrow_key_input(int key) {
 
 void console_buffer_close(void) {
     /* restore console to the state before program started */
-    if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) perror("Write to stdout failed.");
-    if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) perror("Write to stdout failed.");
+    if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) perror("Write to stdout failed");
+    if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) perror("Write to stdout failed");
     char buf[32];
     struct append_buffer ab = APPEND_BUFFER_INIT;
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1);
     abuf_append(&ab, buf, strlen(buf));
-    if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed.");
+    if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed");
     abuf_free(&ab);
 }
 
@@ -1096,10 +1096,6 @@ void editor_process_keypress(int fd) {
     }
     quit_times = QUIT_CONFIRMATIONS; /* Reset it to the original value. */
     previous_key = key;
-}
-
-int editor_file_was_modified(void) {
-    return E.dirty;
 }
 
 void update_window_size(void) {
