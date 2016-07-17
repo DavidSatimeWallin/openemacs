@@ -73,8 +73,8 @@ static struct editor_config E;
 
 enum KEY_ACTION {
     KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6,
-    BACKSPACE = 8, TAB = 9, CTRL_L = 12, ENTER = 13, CTRL_Q = 17, CTRL_S = 19,
-    CTRL_U = 21, CTRL_X = 24, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
+    BACKSPACE = 8, TAB = 9, CTRL_L = 12, CTRL_N = 14, ENTER = 13, CTRL_P = 16,
+    CTRL_S = 19, CTRL_U = 21, CTRL_X = 24, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
     /* The following are just soft codes, not really reported by the
      * terminal directly. */
     ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, DEL_KEY, HOME_KEY,
@@ -967,14 +967,14 @@ void editor_move_cursor_to_y_position_by_arrow_key_input(int key) {
             }
         }
         break;
-    case ARROW_UP:
+    case ARROW_UP: case CTRL_P:
         if (E.cursor_y == 0) {
             if (E.row_offset) E.row_offset--;
         } else {
             E.cursor_y -= 1;
         }
         break;
-    case ARROW_DOWN:
+    case ARROW_DOWN: case CTRL_N:
         if (file_row < E.number_of_rows) {
             if (E.cursor_y == E.screen_rows - 1) {
                 E.row_offset++;
@@ -1014,7 +1014,7 @@ void console_buffer_close(void) {
  * is typing stuff on the terminal. */
 #define KILO_QUIT_CONFIRMATIONS 3
 void editor_process_keypress(int fd) {
-    /* When the file is modified, requires ctrl-q to be pressed N times
+    /* When the file is modified, requires ctrl-c to be pressed N times
      * before actually quitting. */
     static int quit_times = KILO_QUIT_CONFIRMATIONS;
     int c = editor_read_key(fd);
@@ -1026,10 +1026,10 @@ void editor_process_keypress(int fd) {
         /* Go to start of line */
         editor_move_cursor_to_x_position(0);
         break;
-    case CTRL_C: case CTRL_Q:
+    case CTRL_C:
         /* Quit if the file was already saved. */
         if (E.dirty && quit_times) {
-            editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-q %d more times to quit.", quit_times);
+            editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-c %d more times to quit.", quit_times);
             quit_times--;
             return;
         } else {
@@ -1059,7 +1059,7 @@ void editor_process_keypress(int fd) {
         while (times--)
             editor_move_cursor_to_y_position_by_arrow_key_input(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
-    case ARROW_UP: case ARROW_DOWN: case ARROW_LEFT: case ARROW_RIGHT:
+    case ARROW_UP: case ARROW_DOWN: case ARROW_LEFT: case ARROW_RIGHT: case CTRL_N: case CTRL_P:
         editor_move_cursor_to_y_position_by_arrow_key_input(c);
         break;
     case CTRL_X: case CTRL_L:
@@ -1139,7 +1139,7 @@ int main(int argc, char **argv) {
     editor_select_syntax_highlight(argv[1]);
     editor_open(argv[1]);
     enable_raw_mode(STDIN_FILENO);
-    editor_set_status_message("Commands: ctrl-s = Save | ctrl-q = Quit | ctrl-f = Find");
+    editor_set_status_message("Commands: ctrl-s = Save | ctrl-c = Quit | ctrl-f = Find");
     while (1) {
         editor_refresh_screen();
         editor_process_keypress(STDIN_FILENO);
