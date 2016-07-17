@@ -191,7 +191,6 @@ int enable_raw_mode(int fd) {
     E.raw_mode = 1;
     console_buffer_open();
     return 0;
-
 fatal:
     errno = ENOTTY;
     return -1;
@@ -217,27 +216,38 @@ int editor_read_key(int fd) {
                     if (read(fd, seq + 2, 1) == 0) return ESC;
                     if (seq[2] == '~') {
                         switch (seq[1]) {
-                        case '3': return DEL_KEY;
-                        case '5': return PAGE_UP;
-                        case '6': return PAGE_DOWN;
+                        case '3':
+                            return DEL_KEY;
+                        case '5':
+                            return PAGE_UP;
+                        case '6':
+                            return PAGE_DOWN;
                         }
                     }
                 } else {
                     switch (seq[1]) {
-                    case 'A': return ARROW_UP;
-                    case 'B': return ARROW_DOWN;
-                    case 'C': return ARROW_RIGHT;
-                    case 'D': return ARROW_LEFT;
-                    case 'H': return HOME_KEY;
-                    case 'F': return END_KEY;
+                    case 'A':
+                        return ARROW_UP;
+                    case 'B':
+                        return ARROW_DOWN;
+                    case 'C':
+                        return ARROW_RIGHT;
+                    case 'D':
+                        return ARROW_LEFT;
+                    case 'H':
+                        return HOME_KEY;
+                    case 'F':
+                        return END_KEY;
                     }
                 }
             }
             /* ESC O sequences. */
             else if (seq[0] == 'O') {
                 switch (seq[1]) {
-                case 'H': return HOME_KEY;
-                case 'F': return END_KEY;
+                case 'H':
+                    return HOME_KEY;
+                case 'F':
+                    return END_KEY;
                 }
             }
             break;
@@ -289,7 +299,7 @@ int is_separator(int c) {
  * of the row but spawns to the next row. */
 int editor_row_has_open_comment(editor_row *row) {
     if (row->rendered_chars_highlight_type && row->rendered_size && row->rendered_chars_highlight_type[row->rendered_size - 1] == HIGHLIGHT_MULTI_LINE_COMMENT &&
-        (row->rendered_size < 2 || (row->rendered_chars[row->rendered_size - 2] != '*' || row->rendered_chars[row->rendered_size - 1] != '/'))) return 1;
+            (row->rendered_size < 2 || (row->rendered_chars[row->rendered_size - 2] != '*' || row->rendered_chars[row->rendered_size - 1] != '/'))) return 1;
     return 0;
 }
 
@@ -331,19 +341,22 @@ void editor_update_syntax(editor_row *row) {
             row->rendered_chars_highlight_type[i] = HIGHLIGHT_MULTI_LINE_COMMENT;
             if (*p == mce[0] && *(p + 1) == mce[1]) {
                 row->rendered_chars_highlight_type[i + 1] = HIGHLIGHT_MULTI_LINE_COMMENT;
-                p += 2; i += 2;
+                p += 2;
+                i += 2;
                 in_comment = 0;
                 prev_sep = 1;
                 continue;
             } else {
                 prev_sep = 0;
-                p++; i++;
+                p++;
+                i++;
                 continue;
             }
         } else if (*p == mcs[0] && *(p + 1) == mcs[1]) {
             row->rendered_chars_highlight_type[i] = HIGHLIGHT_MULTI_LINE_COMMENT;
             row->rendered_chars_highlight_type[i + 1] = HIGHLIGHT_MULTI_LINE_COMMENT;
-            p += 2; i += 2;
+            p += 2;
+            i += 2;
             in_comment = 1;
             prev_sep = 0;
             continue;
@@ -353,18 +366,21 @@ void editor_update_syntax(editor_row *row) {
             row->rendered_chars_highlight_type[i] = HIGHLIGHT_STRING;
             if (*p == '\\') {
                 row->rendered_chars_highlight_type[i + 1] = HIGHLIGHT_STRING;
-                p += 2; i += 2;
+                p += 2;
+                i += 2;
                 prev_sep = 0;
                 continue;
             }
             if (*p == in_string) in_string = 0;
-            p++; i++;
+            p++;
+            i++;
             continue;
         } else {
             if (*p == '"' || *p == '\'') {
                 in_string = *p;
                 row->rendered_chars_highlight_type[i] = HIGHLIGHT_STRING;
-                p++; i++;
+                p++;
+                i++;
                 prev_sep = 0;
                 continue;
             }
@@ -372,15 +388,17 @@ void editor_update_syntax(editor_row *row) {
         /* Handle non printable chars. */
         if (!isprint(*p)) {
             row->rendered_chars_highlight_type[i] = HIGHLIGHT_NONPRINT;
-            p++; i++;
+            p++;
+            i++;
             prev_sep = 0;
             continue;
         }
         /* Handle numbers */
         if ((isdigit(*p) && (prev_sep || row->rendered_chars_highlight_type[i - 1] == HIGHLIGHT_NUMBER)) ||
-            (*p == '.' && i > 0 && row->rendered_chars_highlight_type[i - 1] == HIGHLIGHT_NUMBER)) {
+                (*p == '.' && i > 0 && row->rendered_chars_highlight_type[i - 1] == HIGHLIGHT_NUMBER)) {
             row->rendered_chars_highlight_type[i] = HIGHLIGHT_NUMBER;
-            p++; i++;
+            p++;
+            i++;
             prev_sep = 0;
             continue;
         }
@@ -406,7 +424,8 @@ void editor_update_syntax(editor_row *row) {
         }
         /* Not special chars */
         prev_sep = is_separator(*p);
-        p++; i++;
+        p++;
+        i++;
     }
     /* Propagate syntax change to the next row if the open comment
      * state changed. This may recursively affect all the following rows
@@ -421,13 +440,20 @@ void editor_update_syntax(editor_row *row) {
 int editor_syntax_to_color(int hl) {
     switch (hl) {
     case HIGHLIGHT_SINGLE_LINE_COMMENT:
-    case HIGHLIGHT_MULTI_LINE_COMMENT: return 31; /* normal red */
-    case HIGHLIGHT_KEYWORD_1: return 35;          /* normal magenta */
-    case HIGHLIGHT_KEYWORD_2: return 32;          /* normal green */
-    case HIGHLIGHT_STRING: return 95;             /* bright magenta */
-    case HIGHLIGHT_NUMBER: return 97;             /* bright white */
-    case HIGHLIGHT_SEARCH_MATCH: return 96;       /* bright cyan */
-    default: return 37;                           /* normal white */
+    case HIGHLIGHT_MULTI_LINE_COMMENT:
+        return 31; /* normal red */
+    case HIGHLIGHT_KEYWORD_1:
+        return 35; /* normal magenta */
+    case HIGHLIGHT_KEYWORD_2:
+        return 32; /* normal green */
+    case HIGHLIGHT_STRING:
+        return 95; /* bright magenta */
+    case HIGHLIGHT_NUMBER:
+        return 97; /* bright white */
+    case HIGHLIGHT_SEARCH_MATCH:
+        return 96; /* bright cyan */
+    default:
+        return 37; /* normal white */
     }
 }
 
@@ -455,8 +481,8 @@ void editor_select_syntax_highlight(char *filename) {
 /* Update the rendered version and the syntax highlight of a row. */
 void editor_update_row(editor_row *row) {
     int tabs = 0;
-   /* Create a version of the row we can directly print on the screen,
-     * respecting tabs, substituting non printable characters with '?'. */
+    /* Create a version of the row we can directly print on the screen,
+      * respecting tabs, substituting non printable characters with '?'. */
     free(row->rendered_chars);
     for (int i = 0; i < row->size; i++)
         if (row->chars[i] == TAB) tabs++;
@@ -719,7 +745,6 @@ int editor_save(void) {
     E.dirty = 0;
     editor_set_status_message("Wrote %s (%d bytes)", E.filename, len);
     return 0;
-
 write_error:
     free(buf);
     if (fd != -1) close(fd);
@@ -800,7 +825,9 @@ void editor_refresh_screen(void) {
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
     char status[80];
-    int len = snprintf(status, sizeof(status), "%.20s%s - L%d/%d (%d %%)", E.filename, E.dirty ? " (modified)" : "", E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0 && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100);
+    int len = snprintf(status, sizeof(status), "%.20s%s - L%d/%d (%d %%)", E.filename, E.dirty ? " (modified)" : "",
+                       E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0
+                       && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100);
     if (len > E.screen_columns) len = E.screen_columns;
     abuf_append(&ab, status, len);
     while (len++ < E.screen_columns)
@@ -865,8 +892,10 @@ void editor_find(int fd) {
             last_match = -1;
         } else if (c == ESC || c == CTRL_C || c == ENTER) {
             if (c == ESC || c == CTRL_C) {
-                E.cursor_x = saved_cx; E.cursor_y = saved_cy;
-                E.column_offset = saved_column_offset; E.row_offset = saved_row_offset;
+                E.cursor_x = saved_cx;
+                E.cursor_y = saved_cy;
+                E.column_offset = saved_column_offset;
+                E.row_offset = saved_row_offset;
             }
             FIND_RESTORE_HL;
             editor_set_status_message("");
@@ -967,14 +996,16 @@ void editor_move_cursor_to_y_position_by_arrow_key_input(int key) {
             }
         }
         break;
-    case ARROW_UP: case CTRL_P:
+    case ARROW_UP:
+    case CTRL_P:
         if (E.cursor_y == 0) {
             if (E.row_offset) E.row_offset--;
         } else {
             E.cursor_y -= 1;
         }
         break;
-    case ARROW_DOWN: case CTRL_N:
+    case ARROW_DOWN:
+    case CTRL_N:
         if (file_row < E.number_of_rows) {
             if (E.cursor_y == E.screen_rows - 1) {
                 E.row_offset++;
@@ -1047,10 +1078,13 @@ void editor_process_keypress(int fd) {
     case CTRL_F:
         editor_find(fd);
         break;
-    case FORWARD_DELETE: case BACKSPACE: case DEL_KEY:
+    case BACKSPACE:
+    case DEL_KEY:
+    case FORWARD_DELETE:
         editor_delete_char();
         break;
-    case PAGE_UP: case PAGE_DOWN:
+    case PAGE_DOWN:
+    case PAGE_UP:
         if (c == PAGE_UP && E.cursor_y != 0)
             E.cursor_y = 0;
         else if (c == PAGE_DOWN && E.cursor_y != E.screen_rows - 1)
@@ -1059,10 +1093,16 @@ void editor_process_keypress(int fd) {
         while (times--)
             editor_move_cursor_to_y_position_by_arrow_key_input(c == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
-    case ARROW_UP: case ARROW_DOWN: case ARROW_LEFT: case ARROW_RIGHT: case CTRL_N: case CTRL_P:
+    case ARROW_DOWN:
+    case ARROW_LEFT:
+    case ARROW_RIGHT:
+    case ARROW_UP:
+    case CTRL_N:
+    case CTRL_P:
         editor_move_cursor_to_y_position_by_arrow_key_input(c);
         break;
-    case CTRL_X: case CTRL_L:
+    case CTRL_L:
+    case CTRL_X:
         /* Just refresh the line as side effect. */
         break;
     case CTRL_Z:
