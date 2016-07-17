@@ -273,7 +273,8 @@ int is_separator(int c) {
  * that starts at this row or at one before, and does not end at the end
  * of the row but spawns to the next row. */
 int editor_row_has_open_comment(editor_row *row) {
-    if (row->rendered_chars_syntax_highlight_type && row->rendered_size && row->rendered_chars_syntax_highlight_type[row->rendered_size - 1] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT &&
+    if (row->rendered_chars_syntax_highlight_type && row->rendered_size &&
+            row->rendered_chars_syntax_highlight_type[row->rendered_size - 1] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT &&
             (row->rendered_size < 2 || (row->rendered_chars[row->rendered_size - 2] != '*' || row->rendered_chars[row->rendered_size - 1] != '/'))) return 1;
     return 0;
 }
