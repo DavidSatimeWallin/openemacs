@@ -824,7 +824,7 @@ void editor_refresh_screen(void) {
     abuf_free(&ab);
 }
 
-/* =============================== Find mode ================================ */
+/* =============================== Search mode ================================ */
 
 #define SEARCH_QUERY_LENGTH 256
 
@@ -835,14 +835,14 @@ void editor_move_cursor_to_x_position(int i) {
     if (row) E.cursor_x = i == -1 ? row->size : 0;
 }
 
-void editor_find(int fd) {
+void editor_search(int fd) {
     char query[SEARCH_QUERY_LENGTH + 1] = { 0 };
     int qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
-    int find_next = 0; /* if 1 search next, if -1 search prev. */
+    int search_next = 0; /* if 1 search next, if -1 search prev. */
     int saved_hl_line = -1;  /* No saved HL */
     char *saved_hl = NULL;
-#define FIND_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
+#define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
     if (saved_hl) { \
         memcpy(E.row[saved_hl_line].rendered_chars_syntax_highlight_type, saved_hl, E.row[saved_hl_line].rendered_size); \
         saved_hl = NULL; \
@@ -865,13 +865,13 @@ void editor_find(int fd) {
                 E.column_offset = saved_column_offset;
                 E.row_offset = saved_row_offset;
             }
-            FIND_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
+            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
             editor_set_status_message("");
             return;
         } else if (c == ARROW_RIGHT || c == ARROW_DOWN || c == CTRL_S) {
-            find_next = 1;
+            search_next = 1;
         } else if (c == ARROW_LEFT || c == ARROW_UP || c == CTRL_R) {
-            find_next = -1;
+            search_next = -1;
         } else if (isprint(c)) {
             if (qlen < SEARCH_QUERY_LENGTH) {
                 query[qlen++] = c;
@@ -880,13 +880,13 @@ void editor_find(int fd) {
             }
         }
         /* Search occurrence. */
-        if (last_match == -1) find_next = 1;
-        if (find_next) {
+        if (last_match == -1) search_next = 1;
+        if (search_next) {
             char *match = NULL;
             int match_offset = 0;
             int current = last_match;
             for (int i = 0; i < E.number_of_rows; i++) {
-                current += find_next;
+                current += search_next;
                 if (current == -1) current = E.number_of_rows - 1;
                 else if (current == E.number_of_rows) current = 0;
                 match = strstr(E.row[current].rendered_chars, query);
@@ -895,9 +895,9 @@ void editor_find(int fd) {
                     break;
                 }
             }
-            find_next = 0;
+            search_next = 0;
             /* Highlight */
-            FIND_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
+            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
             if (match) {
                 editor_row *row = &E.row[current];
                 last_match = current;
@@ -1042,7 +1042,7 @@ void editor_process_keypress(int fd) {
         if (previous_key == CTRL_X)
             editor_save();
         else
-            editor_find(fd);
+            editor_search(fd);
         break;
     case CTRL_E:
         /* Go to end of line */
@@ -1146,7 +1146,7 @@ int main(int argc, char **argv) {
     editor_select_syntax_highlight(argv[1]);
     editor_open(argv[1]);
     enable_raw_mode(STDIN_FILENO);
-    editor_set_status_message("Commands: ctrl-s = Find | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
+    editor_set_status_message("Commands: ctrl-s = Search | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
     while (1) {
         editor_refresh_screen();
         editor_process_keypress(STDIN_FILENO);
