@@ -140,7 +140,7 @@ struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 
-void disable_raw_mode() {
+void disable_raw_mode(void) {
     /* Don't even check the return value as it's too late. */
     if (E.raw_mode) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
@@ -161,7 +161,7 @@ void console_buffer_open(void) {
 }
 
 /* Raw mode: 1960 magic shit. */
-int enable_raw_mode() {
+int enable_raw_mode(void) {
     struct termios raw;
     if (E.raw_mode) return 0; /* Already enabled. */
     if (!isatty(STDIN_FILENO)) goto fatal;
@@ -193,7 +193,7 @@ fatal:
 
 /* Read a key from the terminal put in raw mode, trying to handle
  * escape sequences. */
-int editor_read_key() {
+int editor_read_key(void) {
     int nread;
     char key, seq[3];
     while ((nread = read(STDIN_FILENO, &key, 1)) == 0);
@@ -637,7 +637,7 @@ fix_cursor:
 }
 
 /* Delete the char at the current prompt position. */
-void editor_delete_char() {
+void editor_delete_char(void) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
@@ -835,7 +835,7 @@ void editor_move_cursor_to_x_position(int i) {
     if (row) E.cursor_x = i == -1 ? row->size : 0;
 }
 
-void editor_search() {
+void editor_search(void) {
     char query[SEARCH_QUERY_LENGTH + 1] = { 0 };
     int qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
@@ -1012,7 +1012,7 @@ void console_buffer_close(void) {
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
 #define QUIT_CONFIRMATIONS 3
-void editor_process_keypress() {
+void editor_process_keypress(void) {
     /* When the file is modified, requires ctrl-c to be pressed N times
      * before actually quitting. */
     static int quit_times = QUIT_CONFIRMATIONS;
