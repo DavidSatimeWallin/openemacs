@@ -140,17 +140,17 @@ struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
 
 static struct termios orig_termios; /* In order to restore at exit.*/
 
-void disable_raw_mode(int fd) {
+void disable_raw_mode() {
     /* Don't even check the return value as it's too late. */
     if (E.raw_mode) {
-        tcsetattr(fd, TCSAFLUSH, &orig_termios);
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
         E.raw_mode = 0;
     }
 }
 
 /* Called at exit to avoid remaining in raw mode. */
 void editor_at_exit(void) {
-    disable_raw_mode(STDIN_FILENO);
+    disable_raw_mode();
 }
 
 void console_buffer_open(void) {
@@ -161,12 +161,12 @@ void console_buffer_open(void) {
 }
 
 /* Raw mode: 1960 magic shit. */
-int enable_raw_mode(int fd) {
+int enable_raw_mode() {
     struct termios raw;
     if (E.raw_mode) return 0; /* Already enabled. */
     if (!isatty(STDIN_FILENO)) goto fatal;
     atexit(editor_at_exit);
-    if (tcgetattr(fd, &orig_termios) == -1) goto fatal;
+    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) goto fatal;
     raw = orig_termios;  /* modify the original mode */
     /* input modes: no break, no CR to NL, no parity check, no strip char,
      * no start/stop output control. */
@@ -182,7 +182,7 @@ int enable_raw_mode(int fd) {
     raw.c_cc[VMIN] = 0; /* Return each byte, or zero for timeout. */
     raw.c_cc[VTIME] = 1; /* 100 ms timeout (unit is tens of second). */
     /* put terminal in raw mode after flushing */
-    if (tcsetattr(fd, TCSAFLUSH, &raw) < 0) goto fatal;
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) < 0) goto fatal;
     E.raw_mode = 1;
     console_buffer_open();
     return 0;
@@ -193,22 +193,22 @@ fatal:
 
 /* Read a key from the terminal put in raw mode, trying to handle
  * escape sequences. */
-int editor_read_key(int fd) {
+int editor_read_key() {
     int nread;
     char key, seq[3];
-    while ((nread = read(fd, &key, 1)) == 0);
+    while ((nread = read(STDIN_FILENO, &key, 1)) == 0);
     if (nread == -1) exit(1);
     while (1) {
         switch (key) {
         case ESC: /* escape sequence */
             /* If this is just an ESC, we'll timeout here. */
-            if (read(fd, seq, 1) == 0) return ESC;
-            if (read(fd, seq + 1, 1) == 0) return ESC;
+            if (read(STDIN_FILENO, seq, 1) == 0) return ESC;
+            if (read(STDIN_FILENO, seq + 1, 1) == 0) return ESC;
             /* ESC [ sequences. */
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
-                    if (read(fd, seq + 2, 1) == 0) return ESC;
+                    if (read(STDIN_FILENO, seq + 2, 1) == 0) return ESC;
                     if (seq[2] == '~') {
                         switch (seq[1]) {
                         case '3':
@@ -835,7 +835,7 @@ void editor_move_cursor_to_x_position(int i) {
     if (row) E.cursor_x = i == -1 ? row->size : 0;
 }
 
-void editor_search(int fd) {
+void editor_search() {
     char query[SEARCH_QUERY_LENGTH + 1] = { 0 };
     int qlen = 0;
     int last_match = -1; /* Last line where a match was found. -1 for none. */
@@ -854,7 +854,7 @@ void editor_search(int fd) {
     while (1) {
         editor_set_status_message("Search: %s (Use ESC/Arrows/Enter)", query);
         editor_refresh_screen();
-        int c = editor_read_key(fd);
+        int c = editor_read_key();
         if (c == DEL_KEY || c == BACKSPACE || c == FORWARD_DELETE) {
             if (qlen != 0) query[--qlen] = '\0';
             last_match = -1;
@@ -1012,12 +1012,12 @@ void console_buffer_close(void) {
 /* Process events arriving from the standard input, which is, the user
  * is typing stuff on the terminal. */
 #define QUIT_CONFIRMATIONS 3
-void editor_process_keypress(int fd) {
+void editor_process_keypress() {
     /* When the file is modified, requires ctrl-c to be pressed N times
      * before actually quitting. */
     static int quit_times = QUIT_CONFIRMATIONS;
     static int previous_key = -1;
-    int key = editor_read_key(fd);
+    int key = editor_read_key();
     switch (key) {
     case ENTER:
         editor_insert_newline();
@@ -1042,7 +1042,7 @@ void editor_process_keypress(int fd) {
         if (previous_key == CTRL_X)
             editor_save();
         else
-            editor_search(fd);
+            editor_search();
         break;
     case CTRL_E:
         /* Go to end of line */
@@ -1116,9 +1116,9 @@ void handle_sigwinch(int unused __attribute__((unused))) {
 }
 
 void handle_sigcont(int unused __attribute__((unused))) {
-    disable_raw_mode(STDIN_FILENO);
+    disable_raw_mode();
     console_buffer_open();
-    enable_raw_mode(STDIN_FILENO);
+    enable_raw_mode();
     editor_refresh_screen();
 }
 
@@ -1145,11 +1145,11 @@ int main(int argc, char **argv) {
     init_editor();
     editor_select_syntax_highlight(argv[1]);
     editor_open(argv[1]);
-    enable_raw_mode(STDIN_FILENO);
+    enable_raw_mode();
     editor_set_status_message("Commands: ctrl-s = Search | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
     while (1) {
         editor_refresh_screen();
-        editor_process_keypress(STDIN_FILENO);
+        editor_process_keypress();
     }
     return 0;
 }
