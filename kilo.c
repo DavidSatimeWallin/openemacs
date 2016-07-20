@@ -60,7 +60,7 @@ struct editor_config {
     int dirty;                    /* File modified but not saved. */
     char *filename;               /* Currently open filename */
     char status_message[80];
-    time_t status_message_time;
+    time_t status_message_last_update;
     char *cut_buffer;
     struct editor_syntax *syntax; /* Current syntax highlight, or NULL. */
 };
@@ -84,7 +84,7 @@ void editor_set_status_message(const char *fmt, ...) {
     va_start(ap, fmt);
     vsnprintf(E.status_message, sizeof(E.status_message), fmt, ap);
     va_end(ap);
-    E.status_message_time = time(NULL);
+    E.status_message_last_update = time(NULL);
 }
 
 /* =========================== Syntax highlights DB =========================
@@ -804,7 +804,7 @@ void editor_refresh_screen(void) {
     /* Second row depends on E.status_message and the status message update time. */
     abuf_append(&ab, "\x1b[0K", 4);
     int msglen = strlen(E.status_message);
-    if (msglen && time(NULL) - E.status_message_time < 5)
+    if (msglen && time(NULL) - E.status_message_last_update < 5)
         abuf_append(&ab, E.status_message, msglen <= E.screen_columns ? msglen : E.screen_columns);
     /* Put cursor at its current position. Note that the horizontal position
      * at which the cursor is displayed may be different compared to 'E.cursor_x'
