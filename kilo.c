@@ -832,7 +832,7 @@ void editor_refresh_screen(void) {
 void editor_move_cursor_to_x_position(int i) {
     int file_row = E.row_offset + E.cursor_y;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    if (row) E.cursor_x = i == -1 ? row->size : 0;
+    if (row) E.cursor_x = i == -1 ? row->size : i;
 }
 
 void editor_search(void) {
