@@ -455,8 +455,7 @@ void editor_update_row(editor_row *row) {
     free(row->rendered_chars);
     for (int i = 0; i < row->size; i++)
         if (row->chars[i] == TAB) tabs++;
-    int nonprint = 0;
-    row->rendered_chars = malloc(row->size + tabs * 8 + nonprint * 9 + 1);
+    row->rendered_chars = malloc(row->size + tabs * 8 + 1);
     int local_index = 0;
     for (int j = 0; j < row->size; j++) {
         if (row->chars[j] == TAB) {
