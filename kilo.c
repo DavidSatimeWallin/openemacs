@@ -67,9 +67,9 @@ struct editor_config {
 static struct editor_config E;
 
 enum KEY_ACTION {
-    KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6,
-    BACKSPACE = 8, TAB = 9, CTRL_L = 12, ENTER = 13, CTRL_N = 14, CTRL_P = 16, CTRL_R = 18,
-    CTRL_S = 19, CTRL_U = 21, CTRL_X = 24, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
+    KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6, BACKSPACE = 8, TAB = 9,
+    CTRL_K = 11, CTRL_L = 12, ENTER = 13, CTRL_N = 14, CTRL_P = 16, CTRL_R = 18, CTRL_S = 19, CTRL_U = 21,
+    CTRL_X = 24, CTRL_Y = 25, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
     /* The following are just soft codes, not really reported by the
      * terminal directly. */
     ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, DEL_KEY, HOME_KEY,
@@ -925,7 +925,7 @@ void editor_search(void) {
 /* ========================= Editor events handling  ======================== */
 
 /* Handle cursor position change because arrow keys were pressed. */
-void editor_move_cursor_to_y_position_by_arrow_key_input(int key) {
+void editor_move_cursor_by_arrow_key_input(int key) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
     int rowlen;
@@ -1038,6 +1038,13 @@ void editor_process_keypress(void) {
             exit(0);
         }
         break;
+    case CTRL_K:
+        editor_delete_row(E.row_offset + E.cursor_y);
+        break;
+    case CTRL_Y:
+        editor_insert_row(E.row_offset + E.cursor_y, "", 0);
+        editor_move_cursor_by_arrow_key_input(ARROW_DOWN);
+        break;
     case CTRL_S:
         if (previous_key == CTRL_X)
             editor_save();
@@ -1061,7 +1068,7 @@ void editor_process_keypress(void) {
             E.cursor_y = E.screen_rows - 1;
         int times = E.screen_rows - 2;
         while (times--)
-            editor_move_cursor_to_y_position_by_arrow_key_input(key == PAGE_UP ? ARROW_UP : ARROW_DOWN);
+            editor_move_cursor_by_arrow_key_input(key == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         break;
     case ARROW_DOWN:
     case ARROW_LEFT:
@@ -1069,7 +1076,7 @@ void editor_process_keypress(void) {
     case ARROW_UP:
     case CTRL_N:
     case CTRL_P:
-        editor_move_cursor_to_y_position_by_arrow_key_input(key);
+        editor_move_cursor_by_arrow_key_input(key);
         break;
     case CTRL_L:
     case CTRL_X:
