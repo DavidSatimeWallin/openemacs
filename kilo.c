@@ -169,8 +169,8 @@ void editor_free_row(editor_row *row) {
  */
 void editor_at_exit(void) {
     disable_raw_mode();
-    for (int j = 0; j < E.number_of_rows; j++) {
-        editor_free_row(&E.row[j]);
+    for (int i = 0; i < E.number_of_rows; i++) {
+        editor_free_row(&E.row[i]);
     }
     free(E.cut_buffer);
     free(E.filename);
@@ -481,14 +481,14 @@ void editor_update_row(editor_row *row) {
         if (row->chars[i] == TAB) tabs++;
     row->rendered_chars = malloc(row->size + tabs * 8 + 1);
     int local_index = 0;
-    for (int j = 0; j < row->size; j++) {
-        if (row->chars[j] == TAB) {
+    for (int i = 0; i < row->size; i++) {
+        if (row->chars[i] == TAB) {
             row->rendered_chars[local_index++] = ' ';
             while ((local_index + 1) % 8 != 0) row->rendered_chars[local_index++] = ' ';
-        } else if (!isprint(row->chars[j])) {
+        } else if (!isprint(row->chars[i])) {
             row->rendered_chars[local_index++] = '?';
         } else {
-            row->rendered_chars[local_index++] = row->chars[j];
+            row->rendered_chars[local_index++] = row->chars[i];
         }
     }
     row->rendered_size = local_index;
@@ -504,7 +504,7 @@ void editor_insert_row(int at, char *s, size_t len) {
     E.row = realloc(E.row, sizeof(editor_row) * (E.number_of_rows + 1));
     if (at != E.number_of_rows) {
         memmove(E.row + at + 1, E.row + at, sizeof(E.row[0]) * (E.number_of_rows - at));
-        for (int j = at + 1; j <= E.number_of_rows; j++) E.row[j].index_in_file++;
+        for (int i = at + 1; i <= E.number_of_rows; i++) E.row[i].index_in_file++;
     }
     E.row[at].size = len;
     E.row[at].chars = malloc(len + 1);
@@ -527,7 +527,7 @@ void editor_delete_row(int at) {
     row = E.row + at;
     editor_free_row(row);
     memmove(E.row + at, E.row + at + 1, sizeof(E.row[0]) * (E.number_of_rows - at - 1));
-    for (int j = at; j < E.number_of_rows - 1; j++) E.row[j].index_in_file++;
+    for (int i = at; i < E.number_of_rows - 1; i++) E.row[i].index_in_file++;
     E.number_of_rows--;
     E.dirty++;
 }
@@ -540,14 +540,14 @@ char *editor_rows_to_string(int *buflen) {
     char *buf = NULL, *p;
     int totlen = 0;
     /* Compute count of bytes */
-    for (int j = 0; j < E.number_of_rows; j++)
-        totlen += E.row[j].size + 1; /* +1 is for "\n" at end of every row */
+    for (int i = 0; i < E.number_of_rows; i++)
+        totlen += E.row[i].size + 1; /* +1 is for "\n" at end of every row */
     *buflen = totlen;
     totlen++; /* Also make space for nulterm */
     p = buf = malloc(totlen);
-    for (int j = 0; j < E.number_of_rows; j++) {
-        memcpy(p, E.row[j].chars, E.row[j].size);
-        p += E.row[j].size;
+    for (int i = 0; i < E.number_of_rows; i++) {
+        memcpy(p, E.row[i].chars, E.row[i].size);
+        p += E.row[i].size;
         *p = '\n';
         p++;
     }
@@ -783,22 +783,22 @@ void editor_refresh_screen(void) {
             if (len > E.screen_columns) len = E.screen_columns;
             char *c = r->rendered_chars + E.column_offset;
             unsigned char *rendered_chars_syntax_highlight_type = r->rendered_chars_syntax_highlight_type + E.column_offset;
-            for (int j = 0; j < len; j++) {
-                if (rendered_chars_syntax_highlight_type[j] == SYNTAX_HIGHLIGHT_TYPE_NORMAL) {
+            for (int i = 0; i < len; i++) {
+                if (rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_TYPE_NORMAL) {
                     if (current_color != -1) {
                         abuf_append(&ab, "\x1b[39m", 5);
                         current_color = -1;
                     }
-                    abuf_append(&ab, c + j, 1);
+                    abuf_append(&ab, c + i, 1);
                 } else {
-                    int color = editor_syntax_to_color(rendered_chars_syntax_highlight_type[j]);
+                    int color = editor_syntax_to_color(rendered_chars_syntax_highlight_type[i]);
                     if (color != current_color) {
                         char buf[16];
                         int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", color);
                         current_color = color;
                         abuf_append(&ab, buf, clen);
                     }
-                    abuf_append(&ab, c + j, 1);
+                    abuf_append(&ab, c + i, 1);
                 }
             }
         }
@@ -830,8 +830,8 @@ void editor_refresh_screen(void) {
     int file_row = E.row_offset + E.cursor_y;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row)
-        for (int j = E.column_offset; j < (E.cursor_x + E.column_offset); j++) {
-            if (j < row->size && row->chars[j] == TAB) cx += 7 - ((cx) % 8);
+        for (int i = E.column_offset; i < (E.cursor_x + E.column_offset); i++) {
+            if (i < row->size && row->chars[i] == TAB) cx += 7 - ((cx) % 8);
             cx++;
         }
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cursor_y + 1, cx);
