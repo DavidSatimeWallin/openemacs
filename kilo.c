@@ -61,6 +61,7 @@ struct editor_config {
     char *filename;               /* Currently open filename */
     char status_message[80];
     time_t status_message_time;
+    char *cut_buffer;
     struct editor_syntax *syntax; /* Current syntax highlight, or NULL. */
 };
 
@@ -1039,11 +1040,17 @@ void editor_process_keypress(void) {
         }
         break;
     case CTRL_K:
+        if (E.row_offset + E.cursor_y >= E.number_of_rows) return;
+        editor_row *row = E.row + E.row_offset + E.cursor_y;
+        free(E.cut_buffer);
+        E.cut_buffer = strdup(row->chars);
         editor_delete_row(E.row_offset + E.cursor_y);
         break;
     case CTRL_Y:
-        editor_insert_row(E.row_offset + E.cursor_y, "", 0);
-        editor_move_cursor_by_arrow_key_input(ARROW_DOWN);
+        if (E.cut_buffer) {
+            editor_insert_row(E.row_offset + E.cursor_y, E.cut_buffer, strlen(E.cut_buffer));
+            editor_move_cursor_by_arrow_key_input(ARROW_DOWN);
+        }
         break;
     case CTRL_S:
         if (previous_key == CTRL_X)
