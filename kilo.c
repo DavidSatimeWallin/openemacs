@@ -5,20 +5,20 @@
  * Salvatore "antirez" Sanfilippo under the BSD 2-clause license.
  */
 
-#define _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE /* Linux: ftruncate, getline, kill, strdup */
 
-#include <ctype.h>     /* isdigit, isspace */
-#include <errno.h>     /* errno, ENOENT, ENOTTY */
-#include <fcntl.h>     /* open, O_CREAT, O_RDWR */
-#include <signal.h>    /* kill */
-#include <stdarg.h>    /* va_end, va_start */
-#include <stdio.h>     /* FILE, fclose, fopen, getline, perror, snprintf, sscanf, stderr, vsnprintf */
-#include <stdlib.h>    /* atexit, exit, free, malloc, realloc */
-#include <string.h>    /* memcmp, memcpy, memmove, memset, strchr, strlen, strdup, strerror, strstr */
-#include <sys/ioctl.h> /* ioctl */
-#include <termios.h>   /* struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME */
-#include <time.h>      /* time */
-#include <unistd.h>    /* close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write */
+#include <ctype.h>      /* isdigit, isspace */
+#include <errno.h>      /* errno, ENOENT, ENOTTY */
+#include <fcntl.h>      /* open, O_CREAT, O_RDWR */
+#include <signal.h>     /* kill */
+#include <stdarg.h>     /* va_end, va_start */
+#include <stdio.h>      /* FILE, fclose, fopen, getline, perror, snprintf, sscanf, stderr, vsnprintf */
+#include <stdlib.h>     /* atexit, exit, free, malloc, realloc */
+#include <string.h>     /* memcmp, memcpy, memmove, memset, strchr, strlen, strdup, strerror, strstr */
+#include <sys/ioctl.h>  /* ioctl */
+#include <termios.h>    /* struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME */
+#include <time.h>       /* time */
+#include <unistd.h>     /* close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write */
 
 #define SYNTAX_HIGHLIGHT_TYPE_NORMAL 0
 #define SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT 1
@@ -32,9 +32,9 @@
 struct editor_syntax {
     char **file_match;
     char **keywords;
-    char singleline_comment_start[2];
-    char multiline_comment_start[3];
-    char multiline_comment_end[3];
+    char single_line_comment_start[2];
+    char multi_line_comment_start[3];
+    char multi_line_comment_end[3];
 };
 
 /* This structure represents a single line of the file we are editing. */
@@ -172,9 +172,9 @@ int enable_raw_mode(void) {
      * no start/stop output control. */
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
     /* output modes - disable post processing */
-    raw.c_oflag &= ~(OPOST);
+    raw.c_oflag &= ~OPOST;
     /* control modes - set 8 bit chars */
-    raw.c_cflag |= (CS8);
+    raw.c_cflag |= CS8;
     /* local modes - echoing off, canonical off, no extended functions,
      * no signal chars (^Z,^C) */
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
@@ -288,9 +288,9 @@ void editor_update_syntax(editor_row *row) {
     if (E.syntax == NULL) return; /* No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL. */
     char *p;
     char **keywords = E.syntax->keywords;
-    char *scs = E.syntax->singleline_comment_start;
-    char *mcs = E.syntax->multiline_comment_start;
-    char *mce = E.syntax->multiline_comment_end;
+    char *scs = E.syntax->single_line_comment_start;
+    char *mcs = E.syntax->multi_line_comment_start;
+    char *mce = E.syntax->multi_line_comment_end;
     /* Point to the first non-space char. */
     p = row->rendered_chars;
     int i = 0; /* Current char offset */
