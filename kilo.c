@@ -149,9 +149,33 @@ void disable_raw_mode(void) {
     }
 }
 
-/* Called at exit to avoid remaining in raw mode. */
+/* Free row's heap allocated stuff. */
+void editor_free_row(editor_row *row) {
+    free(row->rendered_chars);
+    free(row->chars);
+    free(row->rendered_chars_syntax_highlight_type);
+}
+
+/*
+ * Cleanups:
+ * - Disable raw mode.
+ * - Clean up allocations to make valgrind report status:
+ *   "All heap blocks were freed -- no leaks are possible"
+ *
+ * Allocations used:
+ * - malloc
+ * - realloc
+ * - strdup
+ */
 void editor_at_exit(void) {
     disable_raw_mode();
+    for (int j = 0; j < E.number_of_rows; j++) {
+        editor_free_row(&E.row[j]);
+    }
+    free(E.cut_buffer);
+    free(E.filename);
+    free(E.row);
+    // Assert: "All heap blocks were freed -- no leaks are possible"
 }
 
 void console_buffer_open(void) {
@@ -493,13 +517,6 @@ void editor_insert_row(int at, char *s, size_t len) {
     editor_update_row(E.row + at);
     E.number_of_rows++;
     E.dirty++;
-}
-
-/* Free row's heap allocated stuff. */
-void editor_free_row(editor_row *row) {
-    free(row->rendered_chars);
-    free(row->chars);
-    free(row->rendered_chars_syntax_highlight_type);
 }
 
 /* Remove the row at the specified position, shifting the remaining on the
