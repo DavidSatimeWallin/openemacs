@@ -224,8 +224,7 @@ int editor_read_key(void) {
     while ((nread = read(STDIN_FILENO, &key, 1)) == 0);
     if (nread == -1) exit(1);
     while (1) {
-        switch (key) {
-        case ESC: /* escape sequence */
+        if (key == ESC) { /* escape sequence */
             /* If this is just an ESC, we'll timeout here. */
             if (read(STDIN_FILENO, seq, 1) == 0) return ESC;
             if (read(STDIN_FILENO, seq + 1, 1) == 0) return ESC;
@@ -235,43 +234,36 @@ int editor_read_key(void) {
                     /* Extended escape, read additional byte. */
                     if (read(STDIN_FILENO, seq + 2, 1) == 0) return ESC;
                     if (seq[2] == '~') {
-                        switch (seq[1]) {
-                        case '3':
+                        if (seq[1] == '3')
                             return DEL_KEY;
-                        case '5':
+                        else if (seq[1] == '5')
                             return PAGE_UP;
-                        case '6':
+                        else if (seq[1] == '6')
                             return PAGE_DOWN;
-                        }
                     }
                 } else {
-                    switch (seq[1]) {
-                    case 'A':
+                    if (seq[1] == 'A')
                         return ARROW_UP;
-                    case 'B':
+                    else if (seq[1] == 'B')
                         return ARROW_DOWN;
-                    case 'C':
+                    else if (seq[1] == 'C')
                         return ARROW_RIGHT;
-                    case 'D':
+                    else if (seq[1] == 'D')
                         return ARROW_LEFT;
-                    case 'H':
+                    else if (seq[1] == 'H')
                         return HOME_KEY;
-                    case 'F':
+                    else if (seq[1] == 'F')
                         return END_KEY;
-                    }
                 }
             }
             /* ESC O sequences. */
             else if (seq[0] == 'O') {
-                switch (seq[1]) {
-                case 'H':
+                if (seq[1] == 'H')
                     return HOME_KEY;
-                case 'F':
+                else if (seq[1] == 'F')
                     return END_KEY;
-                }
             }
-            break;
-        default:
+        } else {
             return key;
         }
     }
@@ -431,23 +423,20 @@ void editor_update_syntax(editor_row *row) {
 
 /* Maps syntax highlight token types to terminal colors. */
 int editor_syntax_to_color(int hl) {
-    switch (hl) {
-    case SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT:
-    case SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT:
+    if (hl == SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT || hl == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT)
         return 31; /* normal red */
-    case SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1:
+    else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1)
         return 35; /* normal magenta */
-    case SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2:
+    else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2)
         return 32; /* normal green */
-    case SYNTAX_HIGHLIGHT_TYPE_STRING:
+    else if (hl == SYNTAX_HIGHLIGHT_TYPE_STRING)
         return 95; /* bright magenta */
-    case SYNTAX_HIGHLIGHT_TYPE_NUMBER:
+    else if (hl == SYNTAX_HIGHLIGHT_TYPE_NUMBER)
         return 97; /* bright white */
-    case SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH:
+    else if (hl == SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH)
         return 96; /* bright cyan */
-    default:
+    else
         return 37; /* normal white */
-    }
 }
 
 /* Select the syntax highlight scheme depending on the filename,
@@ -947,8 +936,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
     int file_column = E.column_offset + E.cursor_x;
     int rowlen;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    switch (key) {
-    case ARROW_LEFT:
+    if (key == ARROW_LEFT) {
         if (E.cursor_x == 0) {
             if (E.column_offset) {
                 E.column_offset--;
@@ -963,8 +951,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
         } else {
             E.cursor_x -= 1;
         }
-        break;
-    case ARROW_RIGHT:
+    } else if (key == ARROW_RIGHT) {
         if (row && file_column < row->size) {
             if (E.cursor_x == E.screen_columns - 1) {
                 E.column_offset++;
@@ -980,17 +967,13 @@ void editor_move_cursor_by_arrow_key_input(int key) {
                 E.cursor_y += 1;
             }
         }
-        break;
-    case ARROW_UP:
-    case CTRL_P:
+    } else if (key == ARROW_UP || key == CTRL_P) {
         if (E.cursor_y == 0) {
             if (E.row_offset) E.row_offset--;
         } else {
             E.cursor_y -= 1;
         }
-        break;
-    case ARROW_DOWN:
-    case CTRL_N:
+    } else if (key == ARROW_DOWN || key == CTRL_N) {
         if (file_row < E.number_of_rows) {
             if (E.cursor_y == E.screen_rows - 1) {
                 E.row_offset++;
@@ -998,7 +981,6 @@ void editor_move_cursor_by_arrow_key_input(int key) {
                 E.cursor_y += 1;
             }
         }
-        break;
     }
     /* Fix cx if the current line has not enough chars. */
     file_row = E.row_offset + E.cursor_y;
@@ -1035,16 +1017,13 @@ void editor_process_keypress(void) {
     static int quit_times = QUIT_CONFIRMATIONS;
     static int previous_key = -1;
     int key = editor_read_key();
-    switch (key) {
-    case ENTER:
+    if (key == ENTER) {
         editor_insert_newline();
-        break;
-    case CTRL_A:
+    } else if (key == CTRL_A) {
         /* Go to start of line */
         editor_move_cursor_to_x_position(0);
-        break;
-    case CTRL_C:
-        if (previous_key != CTRL_X) break;
+    } else if (key == CTRL_C) {
+        if (previous_key != CTRL_X) return;
         /* Quit if the file was already saved. */
         if (E.dirty && quit_times) {
             editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-c %d more times to quit.", quit_times);
@@ -1054,37 +1033,28 @@ void editor_process_keypress(void) {
             console_buffer_close();
             exit(0);
         }
-        break;
-    case CTRL_K:
+    } else if (key == CTRL_K) {
         if (E.row_offset + E.cursor_y >= E.number_of_rows) return;
         editor_row *row = E.row + E.row_offset + E.cursor_y;
         free(E.cut_buffer);
         E.cut_buffer = strdup(row->chars);
         editor_delete_row(E.row_offset + E.cursor_y);
-        break;
-    case CTRL_Y:
+    } else if (key == CTRL_Y) {
         if (E.cut_buffer) {
             editor_insert_row(E.row_offset + E.cursor_y, E.cut_buffer, strlen(E.cut_buffer));
             editor_move_cursor_by_arrow_key_input(ARROW_DOWN);
         }
-        break;
-    case CTRL_S:
+    } else if (key == CTRL_S) {
         if (previous_key == CTRL_X)
             editor_save();
         else
             editor_search();
-        break;
-    case CTRL_E:
+    } else if (key == CTRL_E) {
         /* Go to end of line */
         editor_move_cursor_to_x_position(-1);
-        break;
-    case BACKSPACE:
-    case DEL_KEY:
-    case FORWARD_DELETE:
+    } else if (key == BACKSPACE || key == DEL_KEY || key == FORWARD_DELETE) {
         editor_delete_char();
-        break;
-    case PAGE_DOWN:
-    case PAGE_UP:
+    } else if (key == PAGE_DOWN || key == PAGE_UP) {
         if (key == PAGE_UP && E.cursor_y != 0)
             E.cursor_y = 0;
         else if (key == PAGE_DOWN && E.cursor_y != E.screen_rows - 1)
@@ -1092,37 +1062,23 @@ void editor_process_keypress(void) {
         int times = E.screen_rows - 2;
         while (times--)
             editor_move_cursor_by_arrow_key_input(key == PAGE_UP ? ARROW_UP : ARROW_DOWN);
-        break;
-    case ARROW_DOWN:
-    case ARROW_LEFT:
-    case ARROW_RIGHT:
-    case ARROW_UP:
-    case CTRL_N:
-    case CTRL_P:
+    } else if (key == ARROW_DOWN || key == ARROW_LEFT || key == ARROW_RIGHT || key == ARROW_UP || key == CTRL_N || key == CTRL_P) {
         editor_move_cursor_by_arrow_key_input(key);
-        break;
-    case CTRL_L:
-    case CTRL_X:
+    } else if (key == CTRL_L || key == CTRL_X || key == ESC) {
         /* Just refresh the line as side effect. */
-        break;
-    case CTRL_Z:
+        /* Nothing to do for ESC in this mode. */
+    } else if (key == CTRL_Z) {
         /* Suspend process. */
         console_buffer_close();
         kill(getpid(), SIGTSTP);
-        break;
-    case ESC:
-        /* Nothing to do for ESC in this mode. */
-        break;
-    case TAB:
+    } else if (key == TAB) {
         for (int i = 0; i < 4; i++) editor_insert_char(' ');
-        break;
-    default:
+    } else {
         if (key >= 0 && key <= 31) {
             editor_set_status_message("Unrecognized command: ASCII %d", key);
-            break;
+        } else {
+            editor_insert_char(key);
         }
-        editor_insert_char(key);
-        break;
     }
     quit_times = QUIT_CONFIRMATIONS; /* Reset it to the original value. */
     previous_key = key;
