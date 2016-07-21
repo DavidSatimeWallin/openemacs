@@ -1,24 +1,22 @@
-/*
- * kilo: A simple editor in less than 1 000 lines of code.
- *
- * The original version of kilo which this work is a fork of was released by
- * Salvatore "antirez" Sanfilippo under the BSD 2-clause license.
- */
+// kilo: A simple editor in less than 1 000 lines of code.
+//
+// The original version of kilo which this work is a fork of was released by
+// Salvatore "antirez" Sanfilippo under the BSD 2-clause license.
 
-#define _DEFAULT_SOURCE /* Linux: ftruncate, getline, kill, strdup */
+#define _DEFAULT_SOURCE // Linux: ftruncate, getline, kill, strdup
 
-#include <ctype.h>      /* isdigit, isspace */
-#include <errno.h>      /* errno, ENOENT, ENOTTY */
-#include <fcntl.h>      /* open, O_CREAT, O_RDWR */
-#include <signal.h>     /* kill */
-#include <stdarg.h>     /* va_end, va_start */
-#include <stdio.h>      /* FILE, fclose, fopen, getline, perror, snprintf, sscanf, stderr, vsnprintf */
-#include <stdlib.h>     /* atexit, exit, free, malloc, realloc */
-#include <string.h>     /* memcmp, memcpy, memmove, memset, strchr, strlen, strdup, strerror, strstr */
-#include <sys/ioctl.h>  /* ioctl */
-#include <termios.h>    /* struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME */
-#include <time.h>       /* time */
-#include <unistd.h>     /* close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write */
+#include <ctype.h>      // isdigit, isspace
+#include <errno.h>      // errno, ENOENT, ENOTTY
+#include <fcntl.h>      // open, O_CREAT, O_RDWR
+#include <signal.h>     // kill
+#include <stdarg.h>     // va_end, va_start
+#include <stdio.h>      // FILE, fclose, fopen, getline, perror, snprintf, sscanf, stderr, vsnprintf
+#include <stdlib.h>     // atexit, exit, free, malloc, realloc
+#include <string.h>     // memcmp, memcpy, memmove, memset, strchr, strlen, strdup, strerror, strstr
+#include <sys/ioctl.h>  // ioctl
+#include <termios.h>    // struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME
+#include <time.h>       // time
+#include <unistd.h>     // close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write
 
 #define SYNTAX_HIGHLIGHT_TYPE_NORMAL 0
 #define SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT 1
@@ -37,32 +35,32 @@ struct editor_syntax {
     char multi_line_comment_end[3];
 };
 
-/* This structure represents a single line of the file we are editing. */
+// This structure represents a single line of the file we are editing.
 typedef struct editor_row {
-    int index_in_file;            /* Row index in the file, zero-based. */
-    int size;                     /* Size of the row, excluding the null term. */
-    int rendered_size;            /* Size of the rendered row. */
-    char *chars;                  /* Row content. */
-    char *rendered_chars;         /* Row content "rendered" for screen (for TABs). */
-    unsigned char *rendered_chars_syntax_highlight_type; /* Syntax highlight type for each character in render.*/
-    int has_open_comment;         /* Row had open comment at end in last syntax highlight check. */
+    int index_in_file;            // Row index in the file, zero-based.
+    int size;                     // Size of the row, excluding the null term.
+    int rendered_size;            // Size of the rendered row.
+    char *chars;                  // Row content.
+    char *rendered_chars;         // Row content "rendered" for screen (for TABs).
+    unsigned char *rendered_chars_syntax_highlight_type; // Syntax highlight type for each character in render.
+    int has_open_comment;         // Row had open comment at end in last syntax highlight check.
 } editor_row;
 
 struct editor_config {
-    int cursor_x, cursor_y;       /* Cursor x and y position in characters */
-    int row_offset;               /* Offset of row displayed. */
-    int column_offset;            /* Offset of column displayed. */
-    int screen_rows;              /* Number of rows that we can show */
-    int screen_columns;           /* Number of columns that we can show */
-    int number_of_rows;           /* Number of rows */
-    int raw_mode;                 /* Is terminal raw mode enabled? */
-    editor_row *row;              /* Rows */
-    int dirty;                    /* File modified but not saved. */
-    char *filename;               /* Currently open filename */
+    int cursor_x, cursor_y;       // Cursor x and y position in characters
+    int row_offset;               // Offset of row displayed.
+    int column_offset;            // Offset of column displayed.
+    int screen_rows;              // Number of rows that we can show
+    int screen_columns;           // Number of columns that we can show
+    int number_of_rows;           // Number of rows
+    int raw_mode;                 // Is terminal raw mode enabled?
+    editor_row *row;              // Rows
+    int dirty;                    // File modified but not saved.
+    char *filename;               // Currently open filename
     char status_message[80];
     time_t status_message_last_update;
     char *cut_buffer;
-    struct editor_syntax *syntax; /* Current syntax highlight, or NULL. */
+    struct editor_syntax *syntax; // Current syntax highlight, or NULL.
 };
 
 static struct editor_config E;
@@ -71,14 +69,14 @@ enum KEY_ACTION {
     KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6, BACKSPACE = 8, TAB = 9,
     CTRL_K = 11, CTRL_L = 12, ENTER = 13, CTRL_N = 14, CTRL_P = 16, CTRL_R = 18, CTRL_S = 19, CTRL_U = 21,
     CTRL_X = 24, CTRL_Y = 25, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
-    /* The following are just soft codes, not really reported by the
-     * terminal directly. */
+    // The following are just soft codes, not really reported by the
+    // terminal directly.
     ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, DEL_KEY, HOME_KEY,
     END_KEY, PAGE_UP, PAGE_DOWN
 };
 
-/* Set an editor status message for the second line of the status, at the
- * end of the screen. */
+// Set an editor status message for the second line of the status, at the
+// end of the screen.
 void editor_set_status_message(const char *fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
@@ -87,49 +85,49 @@ void editor_set_status_message(const char *fmt, ...) {
     E.status_message_last_update = time(NULL);
 }
 
-/* =========================== Syntax highlights DB =========================
- *
- * In order to add a new syntax, define two arrays with a list of file name
- * matches and keywords. The file name matches are used in order to match
- * a given syntax with a given file name: if a match pattern starts with a
- * dot, it is matched as the last past of the filename, for example ".c".
- * Otherwise the pattern is just searched inside the filename, like "Makefile").
- *
- * The list of keywords to highlight is just a list of words, however if they
- * a trailing '|' character is added at the end, they are highlighted in
- * a different color, so that you can have two different sets of keywords.
- *
- * Finally add a stanza in the SYNTAX_HIGHLIGHT_DATABASE global variable with two arrays
- * of strings, and a set of flags in order to enable highlighting of
- * comments and numbers.
- *
- * The characters for single and multi line comments must be exactly two
- * and must be provided as well (see the C language example).
- *
- * There is no support to highlight patterns currently. */
+// =========================== Syntax highlights DB =========================
+//
+// In order to add a new syntax, define two arrays with a list of file name
+// matches and keywords. The file name matches are used in order to match
+// a given syntax with a given file name: if a match pattern starts with a
+// dot, it is matched as the last past of the filename, for example ".c".
+// Otherwise the pattern is just searched inside the filename, like "Makefile").
+//
+// The list of keywords to highlight is just a list of words, however if they
+// a trailing '|' character is added at the end, they are highlighted in
+// a different color, so that you can have two different sets of keywords.
+//
+// Finally add a stanza in the SYNTAX_HIGHLIGHT_DATABASE global variable with two arrays
+// of strings, and a set of flags in order to enable highlighting of
+// comments and numbers.
+//
+// The characters for single and multi line comments must be exactly two
+// and must be provided as well (see the C language example).
+//
+// There is no support to highlight patterns currently.
 
-/* C/C++ ("class" being C++ only) */
+// C/C++ ("class" being C++ only)
 char *C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".c", ".cpp", NULL };
 char *C_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
-    /* C/C++ keywords */
+    // C/C++ keywords
     "auto", "break", "case", "class", "const", "continue", "default", "do", "else", "enum", "extern", "for", "goto", "if", "register", "return", "sizeof", "static", "struct", "switch", "typedef", "union", "volatile", "while",
-    /* C types */
+    // C types
     "char|", "double|", "float|", "int|", "long|", "short|", "signed|", "unsigned|", "void|",
-    /* C preprocessor directives */
+    // C preprocessor directives
     "#define|", "#endif|", "#error|", "#ifdef|", "#ifndef|", "#if|", "#include|", "#undef|", NULL
 };
 
-/* Python */
+// Python
 char *PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".py", NULL };
 char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
-    /* Python keywords */
+    // Python keywords
     "and", "as", "assert", "break", "class", "continue", "def", "del", "elif", "else", "except", "exec", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda", "not", "or", "pass", "print", "raise", "return", "try", "while", "with", "yield",
-    /* Python types */
+    // Python types
     "buffer|", "bytearray|", "complex|", "False|", "float|", "frozenset|", "int|", "list|", "long|", "None|", "set|", "str|", "tuple|", "True|", "type|", "unicode|", "xrange|", NULL
 };
 
-/* Here we define an array of syntax highlights by extensions, keywords,
- * comments delimiters and flags. */
+// Here we define an array of syntax highlights by extensions, keywords,
+// comments delimiters and flags.
 struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
     { C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS,      C_SYNTAX_HIGHLIGHT_KEYWORDS,      "//", "/*", "*/" },
     { PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, "# ", "",   ""   }
@@ -137,36 +135,35 @@ struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
 
 #define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
 
-/* ======================= Low level terminal handling ====================== */
+// ======================= Low level terminal handling ======================
 
-static struct termios orig_termios; /* In order to restore at exit.*/
+static struct termios orig_termios; // In order to restore at exit.
 
 void disable_raw_mode(void) {
-    /* Don't even check the return value as it's too late. */
+    // Don't even check the return value as it's too late.
     if (E.raw_mode) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
         E.raw_mode = 0;
     }
 }
 
-/* Free row's heap allocated stuff. */
+// Free row's heap allocated stuff.
 void editor_free_row(editor_row *row) {
     free(row->rendered_chars);
     free(row->chars);
     free(row->rendered_chars_syntax_highlight_type);
 }
 
-/*
- * Cleanups:
- * - Disable raw mode.
- * - Clean up allocations to make valgrind report status:
- *   "All heap blocks were freed -- no leaks are possible"
- *
- * Allocations used:
- * - malloc
- * - realloc
- * - strdup
- */
+// Cleanups:
+// - Disable raw mode.
+// - Clean up allocations to make valgrind report status:
+//   "All heap blocks were freed -- no leaks are possible"
+
+// Allocations used:
+// - malloc
+// - realloc
+// - strdup
+
 void editor_at_exit(void) {
     disable_raw_mode();
     for (int i = 0; i < E.number_of_rows; i++) {
@@ -179,34 +176,33 @@ void editor_at_exit(void) {
 }
 
 void console_buffer_open(void) {
-    /* switch to another buffer in order to be able to restore state at exit
-     * by calling console_buffer_close(void).
-     */
+    // switch to another buffer in order to be able to restore state at exit
+    // by calling console_buffer_close(void).
     if (write(STDOUT_FILENO, "\x1b[?47h", 6) == -1) perror("Write to stdout failed");
 }
 
-/* Raw mode: 1960 magic shit. */
+// Raw mode: 1960 magic shit.
 int enable_raw_mode(void) {
     struct termios raw;
-    if (E.raw_mode) return 0; /* Already enabled. */
+    if (E.raw_mode) return 0; // Already enabled.
     if (!isatty(STDIN_FILENO)) goto fatal;
     atexit(editor_at_exit);
     if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) goto fatal;
-    raw = orig_termios;  /* modify the original mode */
-    /* input modes: no break, no CR to NL, no parity check, no strip char,
-     * no start/stop output control. */
+    raw = orig_termios;  // modify the original mode
+    // input modes: no break, no CR to NL, no parity check, no strip char,
+    // no start/stop output control.
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-    /* output modes - disable post processing */
+    // output modes - disable post processing
     raw.c_oflag &= ~OPOST;
-    /* control modes - set 8 bit chars */
+    // control modes - set 8 bit chars
     raw.c_cflag |= CS8;
-    /* local modes - echoing off, canonical off, no extended functions,
-     * no signal chars (^Z,^C) */
+    // local modes - echoing off, canonical off, no extended functions,
+    // no signal chars (^Z,^C)
     raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-    /* control chars - set return condition: min number of bytes and timer. */
-    raw.c_cc[VMIN] = 0; /* Return each byte, or zero for timeout. */
-    raw.c_cc[VTIME] = 1; /* 100 ms timeout (unit is tens of second). */
-    /* put terminal in raw mode after flushing */
+    // control chars - set return condition: min number of bytes and timer.
+    raw.c_cc[VMIN] = 0; // Return each byte, or zero for timeout.
+    raw.c_cc[VTIME] = 1; // 100 ms timeout (unit is tens of second).
+    // put terminal in raw mode after flushing
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) < 0) goto fatal;
     E.raw_mode = 1;
     console_buffer_open();
@@ -216,22 +212,22 @@ fatal:
     return -1;
 }
 
-/* Read a key from the terminal put in raw mode, trying to handle
- * escape sequences. */
+// Read a key from the terminal put in raw mode, trying to handle
+// escape sequences.
 int editor_read_key(void) {
     int nread;
     char key, seq[3];
     while ((nread = read(STDIN_FILENO, &key, 1)) == 0);
     if (nread == -1) exit(1);
     while (1) {
-        if (key == ESC) { /* escape sequence */
-            /* If this is just an ESC, we'll timeout here. */
+        if (key == ESC) { // escape sequence
+            // If this is just an ESC, we'll timeout here.
             if (read(STDIN_FILENO, seq, 1) == 0) return ESC;
             if (read(STDIN_FILENO, seq + 1, 1) == 0) return ESC;
-            /* ESC [ sequences. */
+            // ESC [ sequences.
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
-                    /* Extended escape, read additional byte. */
+                    // Extended escape, read additional byte.
                     if (read(STDIN_FILENO, seq + 2, 1) == 0) return ESC;
                     if (seq[2] == '~') {
                         if (seq[1] == '3')
@@ -256,7 +252,7 @@ int editor_read_key(void) {
                         return END_KEY;
                 }
             }
-            /* ESC O sequences. */
+            // ESC O sequences.
             else if (seq[0] == 'O') {
                 if (seq[1] == 'H')
                     return HOME_KEY;
@@ -269,8 +265,8 @@ int editor_read_key(void) {
     }
 }
 
-/* Try to get the number of columns in the current terminal.
- * Returns 0 on success, -1 on error. */
+// Try to get the number of columns in the current terminal.
+// Returns 0 on success, -1 on error.
 int get_window_size(int *rows, int *columns) {
     struct winsize ws;
     if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
@@ -280,15 +276,15 @@ int get_window_size(int *rows, int *columns) {
     return 0;
 }
 
-/* ====================== Syntax highlight color scheme  ==================== */
+// ====================== Syntax highlight color scheme  ====================
 
 int is_separator(int c) {
     return c == '\0' || isspace(c) || strchr(",.()+-/*=~%[];:", c) != NULL;
 }
 
-/* Return true if the specified row last char is part of a multi line comment
- * that starts at this row or at one before, and does not end at the end
- * of the row but spawns to the next row. */
+// Return true if the specified row last char is part of a multi line comment
+// that starts at this row or at one before, and does not end at the end
+// of the row but spawns to the next row.
 int editor_row_has_open_comment(editor_row *row) {
     if (row->rendered_chars_syntax_highlight_type && row->rendered_size &&
             row->rendered_chars_syntax_highlight_type[row->rendered_size - 1] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT &&
@@ -296,40 +292,40 @@ int editor_row_has_open_comment(editor_row *row) {
     return 0;
 }
 
-/* Set every byte of row->rendered_chars_syntax_highlight_type (that corresponds to
- * every character in the line) to the right syntax highlight type
- * (SYNTAX_HIGHLIGHT_TYPE_* defines). */
+// Set every byte of row->rendered_chars_syntax_highlight_type (that corresponds to
+// every character in the line) to the right syntax highlight type
+// (SYNTAX_HIGHLIGHT_TYPE_* defines).
 void editor_update_syntax(editor_row *row) {
     row->rendered_chars_syntax_highlight_type = realloc(row->rendered_chars_syntax_highlight_type, row->rendered_size);
     memset(row->rendered_chars_syntax_highlight_type, SYNTAX_HIGHLIGHT_TYPE_NORMAL, row->rendered_size);
-    if (E.syntax == NULL) return; /* No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL. */
+    if (E.syntax == NULL) return; // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
     char *p;
     char **keywords = E.syntax->keywords;
     char *scs = E.syntax->single_line_comment_start;
     char *mcs = E.syntax->multi_line_comment_start;
     char *mce = E.syntax->multi_line_comment_end;
-    /* Point to the first non-space char. */
+    // Point to the first non-space char.
     p = row->rendered_chars;
-    int i = 0; /* Current char offset */
+    int i = 0; // Current char offset
     while (*p && isspace(*p)) {
         p++;
         i++;
     }
-    int prev_sep = 1; /* Tell the parser if 'i' points to start of word. */
-    int in_string = 0; /* Are we inside "" or '' ? */
-    int in_comment = 0; /* Are we inside multi-line comment? */
-    /* If the previous line has an open comment, this line starts
-     * with an open comment state. */
+    int prev_sep = 1; // Tell the parser if 'i' points to start of word.
+    int in_string = 0; // Are we inside "" or '' ?
+    int in_comment = 0; // Are we inside multi-line comment?
+    // If the previous line has an open comment, this line starts
+    // with an open comment state.
     if (row->index_in_file > 0 && editor_row_has_open_comment(&E.row[row->index_in_file - 1]))
         in_comment = 1;
     while (*p) {
-        /* Handle // comments. */
+        // Handle // comments.
         if (prev_sep && *p == scs[0] && *(p + 1) == scs[1]) {
-            /* From here to end is a comment */
+            // From here to end is a comment
             memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT, row->size - i);
             return;
         }
-        /* Handle multi line comments. */
+        // Handle multi line comments.
         if (in_comment) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
             if (*p == mce[0] && *(p + 1) == mce[1]) {
@@ -354,7 +350,7 @@ void editor_update_syntax(editor_row *row) {
             prev_sep = 0;
             continue;
         }
-        /* Handle "" and '' */
+        // Handle "" and ''
         if (in_string) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_STRING;
             if (*p == '\\') {
@@ -378,7 +374,7 @@ void editor_update_syntax(editor_row *row) {
                 continue;
             }
         }
-        /* Handle numbers */
+        // Handle numbers
         if ((isdigit(*p) && (prev_sep || row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_TYPE_NUMBER)) ||
                 (*p == '.' && i > 0 && row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_TYPE_NUMBER)) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_NUMBER;
@@ -387,7 +383,7 @@ void editor_update_syntax(editor_row *row) {
             prev_sep = 0;
             continue;
         }
-        /* Handle keywords and lib calls */
+        // Handle keywords and lib calls
         if (prev_sep) {
             int j;
             for (j = 0; keywords[j]; j++) {
@@ -395,7 +391,7 @@ void editor_update_syntax(editor_row *row) {
                 int kw2 = keywords[j][klen - 1] == '|';
                 if (kw2) klen--;
                 if (!memcmp(p, keywords[j], klen) && is_separator(*(p + klen))) {
-                    /* Keyword */
+                    // Keyword
                     memset(row->rendered_chars_syntax_highlight_type + i, kw2 ? SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 : SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1, klen);
                     p += klen;
                     i += klen;
@@ -404,43 +400,43 @@ void editor_update_syntax(editor_row *row) {
             }
             if (keywords[j] != NULL) {
                 prev_sep = 0;
-                continue; /* We had a keyword match */
+                continue; // We had a keyword match
             }
         }
-        /* Not special chars */
+        // Not special chars
         prev_sep = is_separator(*p);
         p++;
         i++;
     }
-    /* Propagate syntax change to the next row if the open comment
-     * state changed. This may recursively affect all the following rows
-     * in the file. */
+    // Propagate syntax change to the next row if the open comment
+    // state changed. This may recursively affect all the following rows
+    // in the file.
     int oc = editor_row_has_open_comment(row);
     if (row->has_open_comment != oc && row->index_in_file + 1 < E.number_of_rows)
         editor_update_syntax(&E.row[row->index_in_file + 1]);
     row->has_open_comment = oc;
 }
 
-/* Maps syntax highlight token types to terminal colors. */
+// Maps syntax highlight token types to terminal colors.
 int editor_syntax_to_color(int hl) {
     if (hl == SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT || hl == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT)
-        return 31; /* normal red */
+        return 31; // normal red
     else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1)
-        return 35; /* normal magenta */
+        return 35; // normal magenta
     else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2)
-        return 32; /* normal green */
+        return 32; // normal green
     else if (hl == SYNTAX_HIGHLIGHT_TYPE_STRING)
-        return 95; /* bright magenta */
+        return 95; // bright magenta
     else if (hl == SYNTAX_HIGHLIGHT_TYPE_NUMBER)
-        return 97; /* bright white */
+        return 97; // bright white
     else if (hl == SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH)
-        return 96; /* bright cyan */
+        return 96; // bright cyan
     else
-        return 37; /* normal white */
+        return 37; // normal white
 }
 
-/* Select the syntax highlight scheme depending on the filename,
- * setting it in the global state E.syntax. */
+// Select the syntax highlight scheme depending on the filename,
+// setting it in the global state E.syntax.
 void editor_select_syntax_highlight(char *filename) {
     for (unsigned int j = 0; j < SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
         struct editor_syntax *s = SYNTAX_HIGHLIGHT_DATABASE + j;
@@ -458,13 +454,13 @@ void editor_select_syntax_highlight(char *filename) {
     }
 }
 
-/* ======================= Editor rows implementation ======================= */
+// ======================= Editor rows implementation =======================
 
-/* Update the rendered version and the syntax highlight of a row. */
+// Update the rendered version and the syntax highlight of a row.
 void editor_update_row(editor_row *row) {
     int tabs = 0;
-    /* Create a version of the row we can directly print on the screen,
-      * respecting tabs, substituting non printable characters with '?'. */
+    // Create a version of the row we can directly print on the screen,
+    // respecting tabs, substituting non printable characters with '?'.
     free(row->rendered_chars);
     for (int i = 0; i < row->size; i++)
         if (row->chars[i] == TAB) tabs++;
@@ -482,12 +478,12 @@ void editor_update_row(editor_row *row) {
     }
     row->rendered_size = local_index;
     row->rendered_chars[local_index] = '\0';
-    /* Update the syntax highlighting attributes of the row. */
+    // Update the syntax highlighting attributes of the row.
     editor_update_syntax(row);
 }
 
-/* Insert a row at the specified position, shifting the other rows on the bottom
- * if required. */
+// Insert a row at the specified position, shifting the other rows on the bottom
+// if required.
 void editor_insert_row(int at, char *s, size_t len) {
     if (at > E.number_of_rows) return;
     E.row = realloc(E.row, sizeof(editor_row) * (E.number_of_rows + 1));
@@ -508,8 +504,8 @@ void editor_insert_row(int at, char *s, size_t len) {
     E.dirty++;
 }
 
-/* Remove the row at the specified position, shifting the remaining on the
- * top. */
+// Remove the row at the specified position, shifting the remaining on the
+// top.
 void editor_delete_row(int at) {
     editor_row *row;
     if (at >= E.number_of_rows) return;
@@ -521,18 +517,18 @@ void editor_delete_row(int at) {
     E.dirty++;
 }
 
-/* Turn the editor rows into a single heap-allocated string.
- * Returns the pointer to the heap-allocated string and populate the
- * integer pointed by 'buflen' with the size of the string, excluding
- * the final nulterm. */
+// Turn the editor rows into a single heap-allocated string.
+// Returns the pointer to the heap-allocated string and populate the
+// integer pointed by 'buflen' with the size of the string, excluding
+// the final nulterm.
 char *editor_rows_to_string(int *buflen) {
     char *buf = NULL, *p;
     int totlen = 0;
-    /* Compute count of bytes */
+    // Compute count of bytes
     for (int i = 0; i < E.number_of_rows; i++)
-        totlen += E.row[i].size + 1; /* +1 is for "\n" at end of every row */
+        totlen += E.row[i].size + 1; // +1 is for "\n" at end of every row
     *buflen = totlen;
-    totlen++; /* Also make space for nulterm */
+    totlen++; // Also make space for nulterm
     p = buf = malloc(totlen);
     for (int i = 0; i < E.number_of_rows; i++) {
         memcpy(p, E.row[i].chars, E.row[i].size);
@@ -544,21 +540,21 @@ char *editor_rows_to_string(int *buflen) {
     return buf;
 }
 
-/* Insert a character at the specified position in a row, moving the remaining
- * chars on the right if needed. */
+// Insert a character at the specified position in a row, moving the remaining
+// chars on the right if needed.
 void editor_row_insert_char(editor_row *row, int at, int c) {
     if (at > row->size) {
-        /* Pad the string with spaces if the insert location is outside the
-         * current length by more than a single character. */
+        // Pad the string with spaces if the insert location is outside the
+        // current length by more than a single character.
         int padlen = at - row->size;
-        /* In the next line +2 means: new char and null term. */
+        // In the next line +2 means: new char and null term.
         row->chars = realloc(row->chars, row->size + padlen + 2);
         memset(row->chars + row->size, ' ', padlen);
         row->chars[row->size + padlen + 1] = '\0';
         row->size += padlen + 1;
     } else {
-        /* If we are in the middle of the string just make space for 1 new
-         * char plus the (already existing) null term. */
+        // If we are in the middle of the string just make space for 1 new
+        // char plus the (already existing) null term.
         row->chars = realloc(row->chars, row->size + 2);
         memmove(row->chars + at + 1, row->chars + at, row->size - at + 1);
         row->size++;
@@ -568,7 +564,7 @@ void editor_row_insert_char(editor_row *row, int at, int c) {
     E.dirty++;
 }
 
-/* Append the string 's' at the end of a row */
+// Append the string 's' at the end of a row
 void editor_row_append_string(editor_row *row, char *s, size_t len) {
     row->chars = realloc(row->chars, row->size + len + 1);
     memcpy(row->chars + row->size, s, len);
@@ -578,7 +574,7 @@ void editor_row_append_string(editor_row *row, char *s, size_t len) {
     E.dirty++;
 }
 
-/* Delete the character at offset 'at' from the specified row. */
+// Delete the character at offset 'at' from the specified row.
 void editor_row_delete_char(editor_row *row, int at) {
     if (row->size <= at) return;
     memmove(row->chars + at, row->chars + at + 1, row->size - at);
@@ -587,13 +583,13 @@ void editor_row_delete_char(editor_row *row, int at) {
     E.dirty++;
 }
 
-/* Insert the specified char at the current prompt position. */
+// Insert the specified char at the current prompt position.
 void editor_insert_char(int c) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    /* If the row where the cursor is currently located does not exist in our
-     * logical representation of the file, add enough empty rows as needed. */
+    // If the row where the cursor is currently located does not exist in our
+    // logical representation of the file, add enough empty rows as needed.
     if (!row)
         while (E.number_of_rows <= file_row)
             editor_insert_row(E.number_of_rows, "", 0);
@@ -606,8 +602,8 @@ void editor_insert_char(int c) {
     E.dirty++;
 }
 
-/* Inserting a newline is slightly complex as we have to handle inserting a
- * newline in the middle of a line, splitting the line as needed. */
+// Inserting a newline is slightly complex as we have to handle inserting a
+// newline in the middle of a line, splitting the line as needed.
 void editor_insert_newline(void) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
@@ -619,13 +615,13 @@ void editor_insert_newline(void) {
         }
         return;
     }
-    /* If the cursor is over the current line size, we want to conceptually
-     * think it's just over the last character. */
+    // If the cursor is over the current line size, we want to conceptually
+    // think it's just over the last character.
     if (file_column >= row->size) file_column = row->size;
     if (file_column == 0) {
         editor_insert_row(file_row, "", 0);
     } else {
-        /* We are in the middle of a line. Split it between two rows. */
+        // We are in the middle of a line. Split it between two rows.
         editor_insert_row(file_row + 1, row->chars + file_column, row->size - file_column);
         row = &E.row[file_row];
         row->chars[file_column] = '\0';
@@ -642,15 +638,15 @@ fix_cursor:
     E.column_offset = 0;
 }
 
-/* Delete the char at the current prompt position. */
+// Delete the char at the current prompt position.
 void editor_delete_char(void) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (!row || (file_column == 0 && file_row == 0)) return;
     if (file_column == 0) {
-        /* Handle the case of column 0, we need to move the current line
-         * on the right of the previous one. */
+        // Handle the case of column 0, we need to move the current line
+        // on the right of the previous one.
         file_column = E.row[file_row - 1].size;
         editor_row_append_string(&E.row[file_row - 1], row->chars, row->size);
         editor_delete_row(file_row);
@@ -676,8 +672,8 @@ void editor_delete_char(void) {
     E.dirty++;
 }
 
-/* Load the specified program in the editor memory and returns 0 on success
- * or 1 on error. */
+// Load the specified program in the editor memory and returns 0 on success
+// or 1 on error.
 int editor_open(char *filename) {
     FILE *fp;
     E.dirty = 0;
@@ -704,14 +700,14 @@ int editor_open(char *filename) {
     return 0;
 }
 
-/* Save the current file on disk. Return 0 on success, 1 on error. */
+// Save the current file on disk. Return 0 on success, 1 on error.
 int editor_save(void) {
     int len;
     char *buf = editor_rows_to_string(&len);
     int fd = open(E.filename, O_RDWR | O_CREAT, 0644);
     if (fd == -1) goto write_error;
-    /* Use truncate + a single write(2) call in order to make saving
-     * a bit safer, under the limits of what we can do in a small editor. */
+    // Use truncate + a single write(2) call in order to make saving
+    // a bit safer, under the limits of what we can do in a small editor.
     if (ftruncate(fd, len) == -1) goto write_error;
     if (write(fd, buf, len) != len) goto write_error;
     close(fd);
@@ -726,12 +722,12 @@ write_error:
     return 1;
 }
 
-/* ============================= Terminal update ============================ */
+// ============================= Terminal update ============================
 
-/* We define a very simple "append buffer" structure, that is an heap
- * allocated string where we can append to. This is useful in order to
- * write all the escape sequences in a buffer and flush them to the standard
- * output in a single call, to avoid flickering effects. */
+// We define a very simple "append buffer" structure, that is an heap
+// allocated string where we can append to. This is useful in order to
+// write all the escape sequences in a buffer and flush them to the standard
+// output in a single call, to avoid flickering effects.
 struct append_buffer {
     char *b;
     int len;
@@ -751,14 +747,14 @@ void abuf_free(struct append_buffer *ab) {
     free(ab->b);
 }
 
-/* This function writes the whole screen using VT100 escape characters
- * starting from the logical state of the editor in the global state 'E'. */
+// This function writes the whole screen using VT100 escape characters
+// starting from the logical state of the editor in the global state 'E'.
 void editor_refresh_screen(void) {
     editor_row *r;
     char buf[32];
     struct append_buffer ab = APPEND_BUFFER_INIT;
-    abuf_append(&ab, "\x1b[?25l", 6); /* Hide cursor. */
-    abuf_append(&ab, "\x1b[H", 3);    /* Go home. */
+    abuf_append(&ab, "\x1b[?25l", 6); // Hide cursor.
+    abuf_append(&ab, "\x1b[H", 3);    // Go home.
     for (int y = 0; y < E.screen_rows; y++) {
         int file_row = E.row_offset + y;
         if (file_row >= E.number_of_rows) {
@@ -795,7 +791,7 @@ void editor_refresh_screen(void) {
         abuf_append(&ab, "\x1b[0K", 4);
         abuf_append(&ab, "\r\n", 2);
     }
-    /* Create a two rows status. First row: */
+    // Create a two rows status. First row:
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
     char status[80];
@@ -807,14 +803,14 @@ void editor_refresh_screen(void) {
     while (len++ < E.screen_columns)
         abuf_append(&ab, " ", 1);
     abuf_append(&ab, "\x1b[0m\r\n", 6);
-    /* Second row depends on E.status_message and the status message update time. */
+    // Second row depends on E.status_message and the status message update time.
     abuf_append(&ab, "\x1b[0K", 4);
     int msglen = strlen(E.status_message);
     if (msglen && time(NULL) - E.status_message_last_update < 5)
         abuf_append(&ab, E.status_message, msglen <= E.screen_columns ? msglen : E.screen_columns);
-    /* Put cursor at its current position. Note that the horizontal position
-     * at which the cursor is displayed may be different compared to 'E.cursor_x'
-     * because of TABs. */
+    // Put cursor at its current position. Note that the horizontal position
+    // at which the cursor is displayed may be different compared to 'E.cursor_x'
+    // because of TABs.
     int cx = 1;
     int file_row = E.row_offset + E.cursor_y;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
@@ -825,16 +821,16 @@ void editor_refresh_screen(void) {
         }
     snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cursor_y + 1, cx);
     abuf_append(&ab, buf, strlen(buf));
-    abuf_append(&ab, "\x1b[?25h", 6); /* Show cursor. */
+    abuf_append(&ab, "\x1b[?25h", 6); // Show cursor.
     if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed");
     abuf_free(&ab);
 }
 
-/* =============================== Search mode ================================ */
+// =============================== Search mode ================================
 
 #define SEARCH_QUERY_LENGTH 256
 
-/* Move cursor to X position (0: start of line, -1 == end of line) */
+// Move cursor to X position (0: start of line, -1 == end of line)
 void editor_move_cursor_to_x_position(int i) {
     int file_row = E.row_offset + E.cursor_y;
     editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
@@ -844,9 +840,9 @@ void editor_move_cursor_to_x_position(int i) {
 void editor_search(void) {
     char query[SEARCH_QUERY_LENGTH + 1] = { 0 };
     int qlen = 0;
-    int last_match = -1; /* Last line where a match was found. -1 for none. */
-    int search_next = 0; /* if 1 search next, if -1 search prev. */
-    int saved_hl_line = -1;  /* No saved HL */
+    int last_match = -1; // Last line where a match was found. -1 for none.
+    int search_next = 0; // if 1 search next, if -1 search prev.
+    int saved_hl_line = -1;  // No saved HL
     char *saved_hl = NULL;
 #define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
     if (saved_hl) { \
@@ -854,7 +850,7 @@ void editor_search(void) {
         saved_hl = NULL; \
     } \
 } while (0)
-    /* Save the cursor position in order to restore it later. */
+    // Save the cursor position in order to restore it later.
     int saved_cx = E.cursor_x, saved_cy = E.cursor_y;
     int saved_column_offset = E.column_offset, saved_row_offset = E.row_offset;
     while (1) {
@@ -885,7 +881,7 @@ void editor_search(void) {
                 last_match = -1;
             }
         }
-        /* Search occurrence. */
+        // Search occurrence.
         if (last_match == -1) search_next = 1;
         if (search_next) {
             char *match = NULL;
@@ -902,7 +898,7 @@ void editor_search(void) {
                 }
             }
             search_next = 0;
-            /* Highlight */
+            // Highlight
             SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
             if (match) {
                 editor_row *row = &E.row[current];
@@ -917,7 +913,7 @@ void editor_search(void) {
                 E.cursor_x = match_offset;
                 E.row_offset = current;
                 E.column_offset = 0;
-                /* Scroll horizontally as needed. */
+                // Scroll horizontally as needed.
                 if (E.cursor_x > E.screen_columns) {
                     int diff = E.cursor_x - E.screen_columns;
                     E.cursor_x -= diff;
@@ -928,9 +924,9 @@ void editor_search(void) {
     }
 }
 
-/* ========================= Editor events handling  ======================== */
+// ========================= Editor events handling  ========================
 
-/* Handle cursor position change because arrow keys were pressed. */
+// Handle cursor position change because arrow keys were pressed.
 void editor_move_cursor_by_arrow_key_input(int key) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
@@ -982,7 +978,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
             }
         }
     }
-    /* Fix cx if the current line has not enough chars. */
+    // Fix cx if the current line has not enough chars.
     file_row = E.row_offset + E.cursor_y;
     file_column = E.column_offset + E.cursor_x;
     row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
@@ -997,7 +993,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
 }
 
 void console_buffer_close(void) {
-    /* restore console to the state before program started */
+    // restore console to the state before program started
     if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) perror("Write to stdout failed");
     if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) perror("Write to stdout failed");
     char buf[32];
@@ -1008,23 +1004,23 @@ void console_buffer_close(void) {
     abuf_free(&ab);
 }
 
-/* Process events arriving from the standard input, which is, the user
- * is typing stuff on the terminal. */
+// Process events arriving from the standard input, which is, the user
+// is typing stuff on the terminal.
 #define QUIT_CONFIRMATIONS 3
 void editor_process_keypress(void) {
-    /* When the file is modified, requires ctrl-c to be pressed N times
-     * before actually quitting. */
+    // When the file is modified, requires ctrl-c to be pressed N times
+    // before actually quitting.
     static int quit_times = QUIT_CONFIRMATIONS;
     static int previous_key = -1;
     int key = editor_read_key();
     if (key == ENTER) {
         editor_insert_newline();
     } else if (key == CTRL_A) {
-        /* Go to start of line */
+        // Go to start of line
         editor_move_cursor_to_x_position(0);
     } else if (key == CTRL_C) {
         if (previous_key != CTRL_X) return;
-        /* Quit if the file was already saved. */
+        // Quit if the file was already saved.
         if (E.dirty && quit_times) {
             editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-c %d more times to quit.", quit_times);
             quit_times--;
@@ -1050,7 +1046,7 @@ void editor_process_keypress(void) {
         else
             editor_search();
     } else if (key == CTRL_E) {
-        /* Go to end of line */
+        // Go to end of line
         editor_move_cursor_to_x_position(-1);
     } else if (key == BACKSPACE || key == DEL_KEY || key == FORWARD_DELETE) {
         editor_delete_char();
@@ -1065,10 +1061,10 @@ void editor_process_keypress(void) {
     } else if (key == ARROW_DOWN || key == ARROW_LEFT || key == ARROW_RIGHT || key == ARROW_UP || key == CTRL_N || key == CTRL_P) {
         editor_move_cursor_by_arrow_key_input(key);
     } else if (key == CTRL_L || key == CTRL_X || key == ESC) {
-        /* Just refresh the line as side effect. */
-        /* Nothing to do for ESC in this mode. */
+        // Just refresh the line as side effect.
+        // Nothing to do for ESC in this mode.
     } else if (key == CTRL_Z) {
-        /* Suspend process. */
+        // Suspend process.
         console_buffer_close();
         kill(getpid(), SIGTSTP);
     } else if (key == TAB) {
@@ -1080,7 +1076,7 @@ void editor_process_keypress(void) {
             editor_insert_char(key);
         }
     }
-    quit_times = QUIT_CONFIRMATIONS; /* Reset it to the original value. */
+    quit_times = QUIT_CONFIRMATIONS; // Reset it to the original value.
     previous_key = key;
 }
 
@@ -1089,7 +1085,7 @@ void update_window_size(void) {
         perror("Unable to query the screen for size (columns/rows)");
         exit(1);
     }
-    E.screen_rows -= 2; /* Get room for status bar. */
+    E.screen_rows -= 2; // Get room for status bar.
 }
 
 void handle_sigwinch(int unused __attribute__((unused))) {
