@@ -60,8 +60,20 @@ typedef struct editor_config_s {
     char status_message[80];
     time_t status_message_last_update;
     char *cut_buffer;
-    struct editor_syntax_s *syntax; // Current syntax highlight, or NULL.
+    editor_syntax_s *syntax; // Current syntax highlight, or NULL.
+    struct termios original_termios;  // In order to restore at exit.
 } editor_config_s;
+
+// We define a very simple "append buffer" structure, that is an heap
+// allocated string where we can append to. This is useful in order to
+// write all the escape sequences in a buffer and flush them to the standard
+// output in a single call, to avoid flickering effects.
+typedef struct append_buffer_s {
+    char *b;
+    int len;
+} append_buffer_s;
+
+#define APPEND_BUFFER_INIT { NULL, 0 }
 
 static editor_config_s E;
 
@@ -137,12 +149,10 @@ editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
 
 // ======================= Low level terminal handling ======================
 
-static struct termios orig_termios; // In order to restore at exit.
-
 void disable_raw_mode(void) {
     // Don't even check the return value as it's too late.
     if (E.raw_mode) {
-        tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+        tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.original_termios);
         E.raw_mode = 0;
     }
 }
@@ -187,8 +197,8 @@ int enable_raw_mode(void) {
     if (E.raw_mode) return 0; // Already enabled.
     if (!isatty(STDIN_FILENO)) goto fatal;
     atexit(editor_at_exit);
-    if (tcgetattr(STDIN_FILENO, &orig_termios) == -1) goto fatal;
-    raw = orig_termios;  // modify the original mode
+    if (tcgetattr(STDIN_FILENO, &E.original_termios) == -1) goto fatal;
+    raw = E.original_termios;  // modify the original mode
     // input modes: no break, no CR to NL, no parity check, no strip char,
     // no start/stop output control.
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
@@ -723,17 +733,6 @@ write_error:
 }
 
 // ============================= Terminal update ============================
-
-// We define a very simple "append buffer" structure, that is an heap
-// allocated string where we can append to. This is useful in order to
-// write all the escape sequences in a buffer and flush them to the standard
-// output in a single call, to avoid flickering effects.
-typedef struct append_buffer_s {
-    char *b;
-    int len;
-} append_buffer_s;
-
-#define APPEND_BUFFER_INIT { NULL, 0 }
 
 void abuf_append(append_buffer_s *ab, const char *s, int len) {
     char *new = realloc(ab->b, ab->len + len);
