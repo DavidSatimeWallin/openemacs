@@ -43,7 +43,7 @@ typedef struct editor_row_s {
     int rendered_size;            // Size of the rendered row.
     char *chars;                  // Row content.
     char *rendered_chars;         // Row content "rendered" for screen (for TABs).
-    unsigned char *rendered_chars_syntax_highlight_type; // Syntax highlight type for each character in render.
+    char *rendered_chars_syntax_highlight_type; // Syntax highlight type for each character in render.
     bool has_open_comment;        // Row had open comment at end in last syntax highlight check.
 } editor_row_s;
 
@@ -146,7 +146,7 @@ editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
     { PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, "# ", "",   ""   }
 };
 
-#define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
+#define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (int)(sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
 
 // ======================= Low level terminal handling ======================
 
@@ -449,9 +449,9 @@ int editor_syntax_to_color(int hl) {
 // Select the syntax highlight scheme depending on the filename,
 // setting it in the global state E.syntax.
 void editor_select_syntax_highlight(char *filename) {
-    for (unsigned int j = 0; j < SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
+    for (int j = 0; j < SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
         editor_syntax_s *s = SYNTAX_HIGHLIGHT_DATABASE + j;
-        unsigned int i = 0;
+        int i = 0;
         while (s->file_match[i]) {
             char *p;
             int patlen = strlen(s->file_match[i]);
@@ -766,7 +766,7 @@ void editor_refresh_screen(void) {
         if (len > 0) {
             if (len > E.screen_columns) len = E.screen_columns;
             char *c = r->rendered_chars + E.column_offset;
-            unsigned char *rendered_chars_syntax_highlight_type = r->rendered_chars_syntax_highlight_type + E.column_offset;
+            char *rendered_chars_syntax_highlight_type = r->rendered_chars_syntax_highlight_type + E.column_offset;
             for (int i = 0; i < len; i++) {
                 if (rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_TYPE_NORMAL) {
                     if (current_color != -1) {
