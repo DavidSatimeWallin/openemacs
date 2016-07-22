@@ -70,8 +70,8 @@ typedef struct editor_config_s {
 // write all the escape sequences in a buffer and flush them to the standard
 // output in a single call, to avoid flickering effects.
 typedef struct append_buffer_s {
-    char *b;
-    int len;
+    char *buffer;
+    int length;
 } append_buffer_s;
 
 #define APPEND_BUFFER_INIT { NULL, 0 }
@@ -226,48 +226,48 @@ fatal:
 // Read a key from the terminal put in raw mode, trying to handle
 // escape sequences.
 int editor_read_key(void) {
-    int nread;
-    char key, seq[3];
-    while ((nread = read(STDIN_FILENO, &key, 1)) == 0);
-    if (nread == -1) exit(1);
+    int n_read;
+    char key, sequence[3];
+    while ((n_read = read(STDIN_FILENO, &key, 1)) == 0);
+    if (n_read == -1) exit(1);
     while (1) {
         if (key == ESC) { // escape sequence
             // If this is just an ESC, we'll timeout here.
-            if (read(STDIN_FILENO, seq, 1) == 0) return ESC;
-            if (read(STDIN_FILENO, seq + 1, 1) == 0) return ESC;
+            if (read(STDIN_FILENO, sequence, 1) == 0) return ESC;
+            if (read(STDIN_FILENO, sequence + 1, 1) == 0) return ESC;
             // ESC [ sequences.
-            if (seq[0] == '[') {
-                if (seq[1] >= '0' && seq[1] <= '9') {
+            if (sequence[0] == '[') {
+                if (sequence[1] >= '0' && sequence[1] <= '9') {
                     // Extended escape, read additional byte.
-                    if (read(STDIN_FILENO, seq + 2, 1) == 0) return ESC;
-                    if (seq[2] == '~') {
-                        if (seq[1] == '3')
+                    if (read(STDIN_FILENO, sequence + 2, 1) == 0) return ESC;
+                    if (sequence[2] == '~') {
+                        if (sequence[1] == '3')
                             return DEL_KEY;
-                        else if (seq[1] == '5')
+                        else if (sequence[1] == '5')
                             return PAGE_UP;
-                        else if (seq[1] == '6')
+                        else if (sequence[1] == '6')
                             return PAGE_DOWN;
                     }
                 } else {
-                    if (seq[1] == 'A')
+                    if (sequence[1] == 'A')
                         return ARROW_UP;
-                    else if (seq[1] == 'B')
+                    else if (sequence[1] == 'B')
                         return ARROW_DOWN;
-                    else if (seq[1] == 'C')
+                    else if (sequence[1] == 'C')
                         return ARROW_RIGHT;
-                    else if (seq[1] == 'D')
+                    else if (sequence[1] == 'D')
                         return ARROW_LEFT;
-                    else if (seq[1] == 'H')
+                    else if (sequence[1] == 'H')
                         return HOME_KEY;
-                    else if (seq[1] == 'F')
+                    else if (sequence[1] == 'F')
                         return END_KEY;
                 }
             }
             // ESC O sequences.
-            else if (seq[0] == 'O') {
-                if (seq[1] == 'H')
+            else if (sequence[0] == 'O') {
+                if (sequence[1] == 'H')
                     return HOME_KEY;
-                else if (seq[1] == 'F')
+                else if (sequence[1] == 'F')
                     return END_KEY;
             }
         } else {
@@ -279,11 +279,11 @@ int editor_read_key(void) {
 // Try to get the number of columns in the current terminal.
 // Returns 0 on success, -1 on error.
 int get_window_size(int *rows, int *columns) {
-    struct winsize ws;
-    if (ioctl(1, TIOCGWINSZ, &ws) == -1 || ws.ws_col == 0)
+    struct winsize window_size;
+    if (ioctl(1, TIOCGWINSZ, &window_size) == -1 || window_size.ws_col == 0)
         return -1;
-    *columns = ws.ws_col;
-    *rows = ws.ws_row;
+    *columns = window_size.ws_col;
+    *rows = window_size.ws_row;
     return 0;
 }
 
@@ -312,9 +312,9 @@ void editor_update_syntax(editor_row_s *row) {
     if (E.syntax == NULL) return; // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
     char *p;
     char **keywords = E.syntax->keywords;
-    char *scs = E.syntax->single_line_comment_start;
-    char *mcs = E.syntax->multi_line_comment_start;
-    char *mce = E.syntax->multi_line_comment_end;
+    char *single_line_comment_start = E.syntax->single_line_comment_start;
+    char *multi_line_comment_start = E.syntax->multi_line_comment_start;
+    char *multi_line_comment_end = E.syntax->multi_line_comment_end;
     // Point to the first non-space char.
     p = row->rendered_chars;
     int i = 0; // Current char offset
@@ -331,7 +331,7 @@ void editor_update_syntax(editor_row_s *row) {
         in_comment = true;
     while (*p) {
         // Handle // comments.
-        if (prev_sep && *p == scs[0] && *(p + 1) == scs[1]) {
+        if (prev_sep && *p == single_line_comment_start[0] && *(p + 1) == single_line_comment_start[1]) {
             // From here to end is a comment
             memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT, row->size - i);
             return;
@@ -339,7 +339,7 @@ void editor_update_syntax(editor_row_s *row) {
         // Handle multi line comments.
         if (in_comment) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
-            if (*p == mce[0] && *(p + 1) == mce[1]) {
+            if (*p == multi_line_comment_end[0] && *(p + 1) == multi_line_comment_end[1]) {
                 row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
                 p += 2;
                 i += 2;
@@ -352,7 +352,7 @@ void editor_update_syntax(editor_row_s *row) {
                 i++;
                 continue;
             }
-        } else if (*p == mcs[0] && *(p + 1) == mcs[1]) {
+        } else if (*p == multi_line_comment_start[0] && *(p + 1) == multi_line_comment_start[1]) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
             row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
             p += 2;
@@ -398,14 +398,14 @@ void editor_update_syntax(editor_row_s *row) {
         if (prev_sep) {
             int j;
             for (j = 0; keywords[j]; j++) {
-                int klen = strlen(keywords[j]);
-                int kw2 = keywords[j][klen - 1] == '|';
-                if (kw2) klen--;
-                if (!memcmp(p, keywords[j], klen) && is_separator(*(p + klen))) {
+                int keyword_length = strlen(keywords[j]);
+                int keyword_type_2 = keywords[j][keyword_length - 1] == '|';
+                if (keyword_type_2) keyword_length--;
+                if (!memcmp(p, keywords[j], keyword_length) && is_separator(*(p + keyword_length))) {
                     // Keyword
-                    memset(row->rendered_chars_syntax_highlight_type + i, kw2 ? SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 : SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1, klen);
-                    p += klen;
-                    i += klen;
+                    memset(row->rendered_chars_syntax_highlight_type + i, keyword_type_2 ? SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 : SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1, keyword_length);
+                    p += keyword_length;
+                    i += keyword_length;
                     break;
                 }
             }
@@ -422,10 +422,10 @@ void editor_update_syntax(editor_row_s *row) {
     // Propagate syntax change to the next row if the open comment
     // state changed. This may recursively affect all the following rows
     // in the file.
-    int oc = editor_row_has_open_comment(row);
-    if (row->has_open_comment != oc && row->index_in_file + 1 < E.number_of_rows)
+    bool open_comment = editor_row_has_open_comment(row);
+    if (row->has_open_comment != open_comment && row->index_in_file + 1 < E.number_of_rows)
         editor_update_syntax(&E.row[row->index_in_file + 1]);
-    row->has_open_comment = oc;
+    row->has_open_comment = open_comment;
 }
 
 // Maps syntax highlight token types to terminal colors.
@@ -736,22 +736,21 @@ write_error:
 // ============================= Terminal update ============================
 
 void abuf_append(append_buffer_s *ab, const char *s, int len) {
-    char *new = realloc(ab->b, ab->len + len);
+    char *new = realloc(ab->buffer, ab->length + len);
     if (new == NULL) return;
-    memcpy(new + ab->len, s, len);
-    ab->b = new;
-    ab->len += len;
+    memcpy(new + ab->length, s, len);
+    ab->buffer = new;
+    ab->length += len;
 }
 
 void abuf_free(append_buffer_s *ab) {
-    free(ab->b);
+    free(ab->buffer);
 }
 
 // This function writes the whole screen using VT100 escape characters
 // starting from the logical state of the editor in the global state 'E'.
 void editor_refresh_screen(void) {
     editor_row_s *r;
-    char buf[32];
     append_buffer_s ab = APPEND_BUFFER_INIT;
     abuf_append(&ab, "\x1b[?25l", 6); // Hide cursor.
     abuf_append(&ab, "\x1b[H", 3);    // Go home.
@@ -778,10 +777,10 @@ void editor_refresh_screen(void) {
                 } else {
                     int color = editor_syntax_to_color(rendered_chars_syntax_highlight_type[i]);
                     if (color != current_color) {
-                        char buf[16];
-                        int clen = snprintf(buf, sizeof(buf), "\x1b[%dm", color);
+                        char buffer[16];
+                        int clen = snprintf(buffer, sizeof(buffer), "\x1b[%dm", color);
                         current_color = color;
-                        abuf_append(&ab, buf, clen);
+                        abuf_append(&ab, buffer, clen);
                     }
                     abuf_append(&ab, c + i, 1);
                 }
@@ -819,10 +818,11 @@ void editor_refresh_screen(void) {
             if (i < row->size && row->chars[i] == TAB) cx += 7 - ((cx) % 8);
             cx++;
         }
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cursor_y + 1, cx);
-    abuf_append(&ab, buf, strlen(buf));
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "\x1b[%d;%dH", E.cursor_y + 1, cx);
+    abuf_append(&ab, buffer, strlen(buffer));
     abuf_append(&ab, "\x1b[?25h", 6); // Show cursor.
-    if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed");
+    if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) perror("Write to stdout failed");
     abuf_free(&ab);
 }
 
@@ -856,12 +856,12 @@ void editor_search(void) {
     while (1) {
         editor_set_status_message("Search: %s (Use ESC/Arrows/Enter)", query);
         editor_refresh_screen();
-        int c = editor_read_key();
-        if (c == DEL_KEY || c == BACKSPACE || c == FORWARD_DELETE) {
+        int key = editor_read_key();
+        if (key == DEL_KEY || key == BACKSPACE || key == FORWARD_DELETE) {
             if (qlen != 0) query[--qlen] = '\0';
             last_match = -1;
-        } else if (c == ESC || c == CTRL_C || c == ENTER) {
-            if (c == ESC || c == CTRL_C) {
+        } else if (key == ESC || key == CTRL_C || key == ENTER) {
+            if (key == ESC || key == CTRL_C) {
                 E.cursor_x = saved_cx;
                 E.cursor_y = saved_cy;
                 E.column_offset = saved_column_offset;
@@ -870,13 +870,13 @@ void editor_search(void) {
             SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
             editor_set_status_message("");
             return;
-        } else if (c == ARROW_RIGHT || c == ARROW_DOWN || c == CTRL_S) {
+        } else if (key == ARROW_RIGHT || key == ARROW_DOWN || key == CTRL_S) {
             search_next = 1;
-        } else if (c == ARROW_LEFT || c == ARROW_UP || c == CTRL_R) {
+        } else if (key == ARROW_LEFT || key == ARROW_UP || key == CTRL_R) {
             search_next = -1;
-        } else if (isprint(c)) {
+        } else if (isprint(key)) {
             if (qlen < SEARCH_QUERY_LENGTH) {
-                query[qlen++] = c;
+                query[qlen++] = key;
                 query[qlen] = '\0';
                 last_match = -1;
             }
@@ -930,7 +930,7 @@ void editor_search(void) {
 void editor_move_cursor_by_arrow_key_input(int key) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
-    int rowlen;
+    int row_length;
     editor_row_s *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (key == ARROW_LEFT) {
         if (E.cursor_x == 0) {
@@ -982,9 +982,9 @@ void editor_move_cursor_by_arrow_key_input(int key) {
     file_row = E.row_offset + E.cursor_y;
     file_column = E.column_offset + E.cursor_x;
     row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    rowlen = row ? row->size : 0;
-    if (file_column > rowlen) {
-        E.cursor_x -= file_column - rowlen;
+    row_length = row ? row->size : 0;
+    if (file_column > row_length) {
+        E.cursor_x -= file_column - row_length;
         if (E.cursor_x < 0) {
             E.column_offset += E.cursor_x;
             E.cursor_x = 0;
@@ -996,11 +996,11 @@ void console_buffer_close(void) {
     // restore console to the state before program started
     if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) perror("Write to stdout failed");
     if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) perror("Write to stdout failed");
-    char buf[32];
     append_buffer_s ab = APPEND_BUFFER_INIT;
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1);
-    abuf_append(&ab, buf, strlen(buf));
-    if (write(STDOUT_FILENO, ab.b, ab.len) == -1) perror("Write to stdout failed");
+    char buffer[32];
+    snprintf(buffer, sizeof(buffer), "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1);
+    abuf_append(&ab, buffer, strlen(buffer));
+    if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) perror("Write to stdout failed");
     abuf_free(&ab);
 }
 
