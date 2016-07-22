@@ -74,8 +74,6 @@ typedef struct append_buffer_s {
     int length;
 } append_buffer_s;
 
-#define APPEND_BUFFER_INIT { NULL, 0 }
-
 static editor_config_s E;
 
 enum KEY_ACTION {
@@ -142,8 +140,8 @@ char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
 // Here we define an array of syntax highlights by extensions, keywords,
 // comments delimiters and flags.
 editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
-    { C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS,      C_SYNTAX_HIGHLIGHT_KEYWORDS,      "//", "/*", "*/" },
-    { PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, "# ", "",   ""   }
+    { .file_match = C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = C_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "/*", .multi_line_comment_end = "*/" },
+    { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" }
 };
 
 #define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (int)(sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
@@ -751,7 +749,7 @@ void abuf_free(append_buffer_s *ab) {
 // starting from the logical state of the editor in the global state 'E'.
 void editor_refresh_screen(void) {
     editor_row_s *r;
-    append_buffer_s ab = APPEND_BUFFER_INIT;
+    append_buffer_s ab = { .length = 0, .buffer = NULL };
     abuf_append(&ab, "\x1b[?25l", 6); // Hide cursor.
     abuf_append(&ab, "\x1b[H", 3);    // Go home.
     for (int y = 0; y < E.screen_rows; y++) {
@@ -996,7 +994,7 @@ void console_buffer_close(void) {
     // restore console to the state before program started
     if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) perror("Write to stdout failed");
     if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) perror("Write to stdout failed");
-    append_buffer_s ab = APPEND_BUFFER_INIT;
+    append_buffer_s ab = { .buffer = NULL, .length = 0 };
     char buffer[32];
     snprintf(buffer, sizeof(buffer), "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1);
     abuf_append(&ab, buffer, strlen(buffer));
