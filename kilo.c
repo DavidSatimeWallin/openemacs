@@ -90,10 +90,10 @@ enum KEY_ACTION {
 
 // Set an editor status message for the second line of the status, at the
 // end of the screen.
-void editor_set_status_message(const char *fmt, ...) {
+void editor_set_status_message(const char *format, ...) {
     va_list ap;
-    va_start(ap, fmt);
-    vsnprintf(E.status_message, sizeof(E.status_message), fmt, ap);
+    va_start(ap, format);
+    vsnprintf(E.status_message, sizeof(E.status_message), format, ap);
     va_end(ap);
     E.status_message_last_update = time(NULL);
 }
@@ -160,8 +160,8 @@ void disable_raw_mode(void) {
 
 // Free row's heap allocated stuff.
 void editor_free_row(editor_row_s *row) {
-    free(row->rendered_chars);
     free(row->chars);
+    free(row->rendered_chars);
     free(row->rendered_chars_syntax_highlight_type);
 }
 
@@ -534,13 +534,13 @@ void editor_delete_row(int at) {
 // the final nulterm.
 char *editor_rows_to_string(int *buflen) {
     char *buf = NULL, *p;
-    int totlen = 0;
+    int total_length = 0;
     // Compute count of bytes
     for (int i = 0; i < E.number_of_rows; i++)
-        totlen += E.row[i].size + 1; // +1 is for "\n" at end of every row
-    *buflen = totlen;
-    totlen++; // Also make space for nulterm
-    p = buf = malloc(totlen);
+        total_length += E.row[i].size + 1; // +1 is for "\n" at end of every row
+    *buflen = total_length;
+    total_length++; // Also make space for nulterm
+    p = buf = malloc(total_length);
     for (int i = 0; i < E.number_of_rows; i++) {
         memcpy(p, E.row[i].chars, E.row[i].size);
         p += E.row[i].size;
@@ -557,12 +557,12 @@ void editor_row_insert_char(editor_row_s *row, int at, int c) {
     if (at > row->size) {
         // Pad the string with spaces if the insert location is outside the
         // current length by more than a single character.
-        int padlen = at - row->size;
+        int pad_length = at - row->size;
         // In the next line +2 means: new char and null term.
-        row->chars = realloc(row->chars, row->size + padlen + 2);
-        memset(row->chars + row->size, ' ', padlen);
-        row->chars[row->size + padlen + 1] = '\0';
-        row->size += padlen + 1;
+        row->chars = realloc(row->chars, row->size + pad_length + 2);
+        memset(row->chars + row->size, ' ', pad_length);
+        row->chars[row->size + pad_length + 1] = '\0';
+        row->size += pad_length + 1;
     } else {
         // If we are in the middle of the string just make space for 1 new
         // char plus the (already existing) null term.
@@ -699,11 +699,11 @@ int editor_open(char *filename) {
         return 1;
     }
     char *line = NULL;
-    size_t linecap = 0;
-    ssize_t linelen;
-    while ((linelen = getline(&line, &linecap, fp)) != -1) {
-        if (linelen && (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')) line[--linelen] = '\0';
-        editor_insert_row(E.number_of_rows, line, linelen);
+    size_t line_capacity = 0;
+    ssize_t line_length;
+    while ((line_length = getline(&line, &line_capacity, fp)) != -1) {
+        if (line_length && (line[line_length - 1] == '\n' || line[line_length - 1] == '\r')) line[--line_length] = '\0';
+        editor_insert_row(E.number_of_rows, line, line_length);
     }
     free(line);
     fclose(fp);
@@ -810,16 +810,16 @@ void editor_refresh_screen(void) {
     // Put cursor at its current position. Note that the horizontal position
     // at which the cursor is displayed may be different compared to 'E.cursor_x'
     // because of TABs.
-    int cx = 1;
+    int cursor_x_including_expanded_tabs = 1;
     int file_row = E.row_offset + E.cursor_y;
     editor_row_s *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row)
         for (int i = E.column_offset; i < (E.cursor_x + E.column_offset); i++) {
-            if (i < row->size && row->chars[i] == TAB) cx += 7 - ((cx) % 8);
-            cx++;
+            if (i < row->size && row->chars[i] == TAB) cursor_x_including_expanded_tabs += 7 - ((cursor_x_including_expanded_tabs) % 8);
+            cursor_x_including_expanded_tabs++;
         }
     char buffer[32];
-    snprintf(buffer, sizeof(buffer), "\x1b[%d;%dH", E.cursor_y + 1, cx);
+    snprintf(buffer, sizeof(buffer), "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs);
     abuf_append(&ab, buffer, strlen(buffer));
     abuf_append(&ab, "\x1b[?25h", 6); // Show cursor.
     if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) perror("Write to stdout failed");
@@ -851,7 +851,7 @@ void editor_search(void) {
     } \
 } while (0)
     // Save the cursor position in order to restore it later.
-    int saved_cx = E.cursor_x, saved_cy = E.cursor_y;
+    int saved_cursor_x = E.cursor_x, saved_cursor_y = E.cursor_y;
     int saved_column_offset = E.column_offset, saved_row_offset = E.row_offset;
     while (1) {
         editor_set_status_message("Search: %s (Use ESC/Arrows/Enter)", query);
@@ -862,8 +862,8 @@ void editor_search(void) {
             last_match = -1;
         } else if (key == ESC || key == CTRL_C || key == ENTER) {
             if (key == ESC || key == CTRL_C) {
-                E.cursor_x = saved_cx;
-                E.cursor_y = saved_cy;
+                E.cursor_x = saved_cursor_x;
+                E.cursor_y = saved_cursor_y;
                 E.column_offset = saved_column_offset;
                 E.row_offset = saved_row_offset;
             }
