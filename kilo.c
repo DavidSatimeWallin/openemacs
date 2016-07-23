@@ -28,6 +28,8 @@
 #define SYNTAX_HIGHLIGHT_TYPE_NUMBER 6
 #define SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH 7
 
+#define SEARCH_QUERY_MAX_LENGTH 256
+
 typedef struct editor_syntax_s {
     char **file_match;
     char **keywords;
@@ -805,100 +807,11 @@ void editor_refresh_screen(void) {
     abuf_free(&ab);
 }
 
-// =============================== Search mode ================================
-
-#define SEARCH_QUERY_LENGTH 256
-
 // Move cursor to X position (0: start of line, -1 == end of line)
 void editor_move_cursor_to_x_position(int x) {
     int file_row = E.row_offset + E.cursor_y;
     editor_row_s *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row) { E.cursor_x = x == -1 ? row->size : x; }
-}
-
-void editor_search(void) {
-    char query[SEARCH_QUERY_LENGTH + 1] = { 0 };
-    int qlen = 0;
-    int last_match = -1; // Last line where a match was found. -1 for none.
-    int search_next = 0; // if 1 search next, if -1 search prev.
-    int saved_hl_line = -1;  // No saved HL
-    char *saved_hl = NULL;
-#define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
-    if (saved_hl) { \
-        memcpy(E.row[saved_hl_line].rendered_chars_syntax_highlight_type, saved_hl, E.row[saved_hl_line].rendered_size); \
-        saved_hl = NULL; \
-    } \
-} while (0)
-    // Save the cursor position in order to restore it later.
-    int saved_cursor_x = E.cursor_x, saved_cursor_y = E.cursor_y;
-    int saved_column_offset = E.column_offset, saved_row_offset = E.row_offset;
-    while (1) {
-        editor_set_status_message("Search: %s (Use ESC/Arrows/Enter)", query);
-        editor_refresh_screen();
-        int key = editor_read_key();
-        if (key == DEL_KEY || key == BACKSPACE || key == FORWARD_DELETE) {
-            if (qlen != 0) { query[--qlen] = '\0'; }
-            last_match = -1;
-        } else if (key == ESC || key == CTRL_C || key == ENTER) {
-            if (key == ESC || key == CTRL_C) {
-                E.cursor_x = saved_cursor_x;
-                E.cursor_y = saved_cursor_y;
-                E.column_offset = saved_column_offset;
-                E.row_offset = saved_row_offset;
-            }
-            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
-            editor_set_status_message("");
-            return;
-        } else if (key == ARROW_RIGHT || key == ARROW_DOWN || key == CTRL_S) {
-            search_next = 1;
-        } else if (key == ARROW_LEFT || key == ARROW_UP || key == CTRL_R) {
-            search_next = -1;
-        } else if (isprint(key) && qlen < SEARCH_QUERY_LENGTH) {
-            query[qlen++] = key;
-            query[qlen] = '\0';
-            last_match = -1;
-        }
-        // Search occurrence.
-        if (last_match == -1) { search_next = 1; }
-        if (search_next) {
-            char *match = NULL;
-            int match_offset = 0;
-            int current = last_match;
-            for (int i = 0; i < E.number_of_rows; i++) {
-                current += search_next;
-                if (current == -1) { current = E.number_of_rows - 1; }
-                else if (current == E.number_of_rows) { current = 0; }
-                match = strstr(E.row[current].rendered_chars, query);
-                if (match) {
-                    match_offset = match - E.row[current].rendered_chars;
-                    break;
-                }
-            }
-            search_next = 0;
-            // Highlight
-            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
-            if (match) {
-                editor_row_s *row = &E.row[current];
-                last_match = current;
-                if (row->rendered_chars_syntax_highlight_type) {
-                    saved_hl_line = current;
-                    saved_hl = malloc(row->rendered_size);
-                    memcpy(saved_hl, row->rendered_chars_syntax_highlight_type, row->rendered_size);
-                    memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, qlen);
-                }
-                E.cursor_y = 0;
-                E.cursor_x = match_offset;
-                E.row_offset = current;
-                E.column_offset = 0;
-                // Scroll horizontally as needed.
-                if (E.cursor_x > E.screen_columns) {
-                    int diff = E.cursor_x - E.screen_columns;
-                    E.cursor_x -= diff;
-                    E.column_offset += diff;
-                }
-            }
-        }
-    }
 }
 
 // ========================= Editor events handling  ========================
@@ -993,6 +906,92 @@ void editor_recenter_vertically(void) {
         }
         for (int i = 0; i < E.screen_rows / 2; i++) {
             editor_move_cursor_by_arrow_key_input(E.cursor_y - E.screen_rows / 2 < 0 ? ARROW_DOWN : ARROW_UP);
+        }
+    }
+}
+
+void editor_search(void) {
+    char query[SEARCH_QUERY_MAX_LENGTH + 1] = { 0 };
+    int qlen = 0;
+    int last_match = -1; // Last line where a match was found. -1 for none.
+    int search_next = 0; // if 1 search next, if -1 search prev.
+    int saved_hl_line = -1;  // No saved HL
+    char *saved_hl = NULL;
+#define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
+    if (saved_hl) { \
+        memcpy(E.row[saved_hl_line].rendered_chars_syntax_highlight_type, saved_hl, E.row[saved_hl_line].rendered_size); \
+        saved_hl = NULL; \
+    } \
+} while (0)
+    // Save the cursor position in order to restore it later.
+    int saved_cursor_x = E.cursor_x, saved_cursor_y = E.cursor_y;
+    int saved_column_offset = E.column_offset, saved_row_offset = E.row_offset;
+    while (1) {
+        editor_set_status_message("Search: %s (Use ESC/Arrows/Enter)", query);
+        editor_refresh_screen();
+        int key = editor_read_key();
+        if (key == DEL_KEY || key == BACKSPACE || key == FORWARD_DELETE) {
+            if (qlen != 0) { query[--qlen] = '\0'; }
+            last_match = -1;
+        } else if (key == ESC || key == CTRL_C || key == ENTER) {
+            if (key == ESC || key == CTRL_C) {
+                E.cursor_x = saved_cursor_x;
+                E.cursor_y = saved_cursor_y;
+                E.column_offset = saved_column_offset;
+                E.row_offset = saved_row_offset;
+            }
+            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
+            editor_set_status_message("");
+            return;
+        } else if (key == ARROW_RIGHT || key == ARROW_DOWN || key == CTRL_S) {
+            search_next = 1;
+        } else if (key == ARROW_LEFT || key == ARROW_UP || key == CTRL_R) {
+            search_next = -1;
+        } else if (isprint(key) && qlen < SEARCH_QUERY_MAX_LENGTH) {
+            query[qlen++] = key;
+            query[qlen] = '\0';
+            last_match = -1;
+        }
+        // Search occurrence.
+        if (last_match == -1) { search_next = 1; }
+        if (search_next) {
+            char *match = NULL;
+            int match_offset = 0;
+            int current = last_match;
+            for (int i = 0; i < E.number_of_rows; i++) {
+                current += search_next;
+                if (current == -1) { current = E.number_of_rows - 1; }
+                else if (current == E.number_of_rows) { current = 0; }
+                match = strstr(E.row[current].rendered_chars, query);
+                if (match) {
+                    match_offset = match - E.row[current].rendered_chars;
+                    break;
+                }
+            }
+            search_next = 0;
+            // Highlight
+            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
+            if (match) {
+                editor_row_s *row = &E.row[current];
+                last_match = current;
+                if (row->rendered_chars_syntax_highlight_type) {
+                    saved_hl_line = current;
+                    saved_hl = malloc(row->rendered_size);
+                    memcpy(saved_hl, row->rendered_chars_syntax_highlight_type, row->rendered_size);
+                    memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, qlen);
+                }
+                E.cursor_y = 0;
+                E.cursor_x = match_offset;
+                E.row_offset = current;
+                E.column_offset = 0;
+                // Scroll horizontally as needed.
+                if (E.cursor_x > E.screen_columns) {
+                    int diff = E.cursor_x - E.screen_columns;
+                    E.cursor_x -= diff;
+                    E.column_offset += diff;
+                }
+                editor_recenter_vertically();
+            }
         }
     }
 }
