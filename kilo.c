@@ -324,7 +324,7 @@ void editor_update_syntax(editor_row_s *row) {
                 i++;
                 continue;
             }
-        } else if (*p == multi_line_comment_start[0] && *(p + 1) == multi_line_comment_start[1]) {
+        } else if (!in_string_char && *p == multi_line_comment_start[0] && *(p + 1) == multi_line_comment_start[1]) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
             row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
             p += 2;
