@@ -986,6 +986,17 @@ void editor_move_cursor_by_arrow_key_input(int key) {
     }
 }
 
+void editor_recenter_vertically(void) {
+    if (E.cursor_y - E.screen_rows / 2 != 0 && E.row_offset + E.cursor_y - E.screen_rows / 2 > 0 && E.row_offset + E.cursor_y + E.screen_rows / 2 < E.number_of_rows) {
+        for (int i = 0; i < E.screen_rows / 2; i++) {
+            editor_move_cursor_by_arrow_key_input(E.cursor_y - E.screen_rows / 2 < 0 ? ARROW_UP : ARROW_DOWN);
+        }
+        for (int i = 0; i < E.screen_rows / 2; i++) {
+            editor_move_cursor_by_arrow_key_input(E.cursor_y - E.screen_rows / 2 < 0 ? ARROW_DOWN : ARROW_UP);
+        }
+    }
+}
+
 void console_buffer_close(void) {
     // Restore console to the state before program started
     if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) { perror("Write to stdout failed"); }
@@ -1041,8 +1052,10 @@ void editor_process_keypress(void) {
         free(E.cut_buffer);
         E.cut_buffer = strdup(row->chars);
         editor_delete_row(E.row_offset + E.cursor_y);
-    } else if (key == CTRL_L || key == CTRL_X || key == ESC) {
-        // Just refresh the line as side effect. Nothing to do for ESC in this mode.
+    } else if (key == CTRL_L) {
+        editor_recenter_vertically();
+    } else if (key == CTRL_X || key == ESC) {
+        // No-op: ^X ignored to allow for ^X^S et al. ESC used only in search mode.
     } else if (key == CTRL_S) {
         if (previous_key == CTRL_X) {
             editor_save();
