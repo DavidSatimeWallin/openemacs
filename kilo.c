@@ -235,9 +235,7 @@ int editor_read_key(void) {
                         return END_KEY;
                     }
                 }
-            }
-            // ESC O sequences.
-            else if (sequence[0] == 'O') {
+            } else if (sequence[0] == 'O') { // ESC O sequences.
                 if (sequence[1] == 'H') {
                     return HOME_KEY;
                 } else if (sequence[1] == 'F') {
@@ -949,8 +947,11 @@ void editor_search(void) {
             int current = last_match;
             for (int i = 0; i < E.number_of_rows; i++) {
                 current += search_next;
-                if (current == -1) { current = E.number_of_rows - 1; }
-                else if (current == E.number_of_rows) { current = 0; }
+                if (current == -1) {
+                    current = E.number_of_rows - 1;
+                } else if (current == E.number_of_rows) {
+                    current = 0;
+                }
                 match = strcasestr(E.row[current].rendered_chars, query);
                 if (match) {
                     match_offset = match - E.row[current].rendered_chars;
