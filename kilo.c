@@ -89,8 +89,6 @@ enum KEY_ACTION {
     END_KEY, PAGE_UP, PAGE_DOWN
 };
 
-// =========================== Syntax highlights DB =========================
-
 // C/C++ ("class" being C++ only)
 char *C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".c", ".cpp", NULL };
 char *C_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
@@ -125,8 +123,6 @@ void editor_set_status_message(const char *format, ...) {
     va_end(ap);
     E.status_message_last_update = time(NULL);
 }
-
-// ======================= Low level terminal handling ======================
 
 void disable_raw_mode(void) {
     if (E.raw_mode) {
@@ -265,8 +261,6 @@ int get_window_size(int *rows, int *columns) {
     *rows = window_size.ws_row;
     return 0;
 }
-
-// ====================== Syntax highlight color scheme  ====================
 
 bool is_separator(int c) {
     return c == '\0' || isspace(c) || strchr(",.()+-/*=~%[];:{}", c) != NULL;
@@ -441,8 +435,6 @@ void editor_select_syntax_highlight_based_on_filename_suffix(char *filename) {
         }
     }
 }
-
-// ======================= Editor rows implementation =======================
 
 // Update the rendered version and the syntax highlight of a row.
 void editor_update_row(editor_row_s *row) {
@@ -712,8 +704,6 @@ write_error:
     return 1;
 }
 
-// ============================= Terminal update ============================
-
 void abuf_append(append_buffer_s *ab, const char *s, int len) {
     char *new = realloc(ab->buffer, ab->length + len);
     if (new == NULL) { return; }
@@ -813,8 +803,6 @@ void editor_move_cursor_to_x_position(int x) {
     editor_row_s *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row) { E.cursor_x = x == -1 ? row->size : x; }
 }
-
-// ========================= Editor events handling  ========================
 
 void editor_move_cursor_by_arrow_key_input(int key) {
     int file_row = E.row_offset + E.cursor_y;
