@@ -49,6 +49,7 @@ typedef struct editor_row_s {
 
 typedef struct editor_config_s {
     int cursor_x, cursor_y;       // Cursor x and y position in characters
+    int desired_cursor_x;         // Cursor x which user wants if sufficient characters on the line
     int row_offset;               // Offset of row displayed.
     int column_offset;            // Offset of column displayed.
     int screen_rows;              // Number of rows that we can show
@@ -907,6 +908,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
     int file_column = E.column_offset + E.cursor_x;
     int row_length;
     editor_row_s *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
+    bool vertical_move = false;
     if (key == ARROW_LEFT) {
         if (E.cursor_x == 0) {
             if (E.column_offset) {
@@ -944,6 +946,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
         } else {
             E.cursor_y -= 1;
         }
+        vertical_move = true;
     } else if (key == ARROW_DOWN || key == CTRL_N) {
         if (file_row < E.number_of_rows) {
             if (E.cursor_y == E.screen_rows - 1) {
@@ -952,6 +955,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
                 E.cursor_y += 1;
             }
         }
+        vertical_move = true;
     }
     // Fix cx if the current line has not enough chars.
     file_row = E.row_offset + E.cursor_y;
@@ -959,11 +963,26 @@ void editor_move_cursor_by_arrow_key_input(int key) {
     row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     row_length = row ? row->size : 0;
     if (file_column > row_length) {
+        if (vertical_move && (E.desired_cursor_x == -1 || E.cursor_x > E.desired_cursor_x)) {
+            E.desired_cursor_x = E.cursor_x;
+        }
         E.cursor_x -= file_column - row_length;
         if (E.cursor_x < 0) {
             E.column_offset += E.cursor_x;
             E.cursor_x = 0;
         }
+    } else if (vertical_move) {
+        if (E.desired_cursor_x != -1) {
+            E.cursor_x = E.desired_cursor_x;
+            if (E.cursor_x > row_length) {
+                E.cursor_x = row_length;
+            } else {
+                E.desired_cursor_x = -1;
+            }
+        }
+    }
+    if (!vertical_move) {
+        E.desired_cursor_x = -1;
     }
 }
 
