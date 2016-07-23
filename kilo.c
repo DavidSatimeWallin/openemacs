@@ -299,8 +299,8 @@ void editor_update_syntax(editor_row_s *row) {
         i++;
     }
     bool prev_sep = true; // Tell the parser if 'i' points to start of word.
-    bool in_string = false; // Are we inside "" or '' ?
     bool in_comment = false; // Are we inside multi-line comment?
+    char in_string_char = 0; // 0, " or '
     // If the previous line has an open comment, this line starts
     // with an open comment state.
     if (row->index_in_file > 0 && editor_row_has_open_comment(&E.row[row->index_in_file - 1])) {
@@ -339,7 +339,7 @@ void editor_update_syntax(editor_row_s *row) {
             continue;
         }
         // Handle "" and ''
-        if (in_string) {
+        if (in_string_char) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_STRING;
             if (*p == '\\') {
                 row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_STRING;
@@ -348,19 +348,17 @@ void editor_update_syntax(editor_row_s *row) {
                 prev_sep = false;
                 continue;
             }
-            if (*p == in_string) { in_string = false; }
+            if (*p == in_string_char) { in_string_char = 0; }
             p++;
             i++;
             continue;
-        } else {
-            if (*p == '"' || *p == '\'') {
-                in_string = *p;
-                row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_STRING;
-                p++;
-                i++;
-                prev_sep = false;
-                continue;
-            }
+        } else if (*p == '"' || *p == '\'') {
+            in_string_char = *p;
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_STRING;
+            p++;
+            i++;
+            prev_sep = false;
+            continue;
         }
         // Handle numbers
         if ((isdigit(*p) && (prev_sep || row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_TYPE_NUMBER)) ||
