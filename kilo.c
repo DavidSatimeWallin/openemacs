@@ -61,7 +61,7 @@ typedef struct editor_config_s {
     char status_message[80];
     time_t status_message_last_update;
     char *cut_buffer;
-    editor_syntax_s *syntax; // Current syntax highlight, or NULL.
+    editor_syntax_s *syntax_highlight_mode; // Current syntax highlight, or NULL.
     struct termios original_termios;  // In order to restore at exit.
 } editor_config_s;
 
@@ -86,8 +86,6 @@ enum KEY_ACTION {
     END_KEY, PAGE_UP, PAGE_DOWN
 };
 
-// Set an editor status message for the second line of the status, at the
-// end of the screen.
 void editor_set_status_message(const char *format, ...) {
     va_list ap;
     va_start(ap, format);
@@ -97,25 +95,6 @@ void editor_set_status_message(const char *format, ...) {
 }
 
 // =========================== Syntax highlights DB =========================
-//
-// In order to add a new syntax, define two arrays with a list of file name
-// matches and keywords. The file name matches are used in order to match
-// a given syntax with a given file name: if a match pattern starts with a
-// dot, it is matched as the last past of the filename, for example ".c".
-// Otherwise the pattern is just searched inside the filename, like "Makefile").
-//
-// The list of keywords to highlight is just a list of words, however if they
-// a trailing '|' character is added at the end, they are highlighted in
-// a different color, so that you can have two different sets of keywords.
-//
-// Finally add a stanza in the SYNTAX_HIGHLIGHT_DATABASE global variable with two arrays
-// of strings, and a set of flags in order to enable highlighting of
-// comments and numbers.
-//
-// The characters for single and multi line comments must be exactly two
-// and must be provided as well (see the C language example).
-//
-// There is no support to highlight patterns currently.
 
 // C/C++ ("class" being C++ only)
 char *C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".c", ".cpp", NULL };
@@ -137,8 +116,6 @@ char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
     "buffer|", "bytearray|", "complex|", "False|", "float|", "frozenset|", "int|", "list|", "long|", "None|", "set|", "str|", "tuple|", "True|", "type|", "unicode|", "xrange|", NULL
 };
 
-// Here we define an array of syntax highlights by extensions, keywords,
-// comments delimiters and flags.
 editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
     { .file_match = C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = C_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "/*", .multi_line_comment_end = "*/" },
     { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" }
@@ -149,14 +126,12 @@ editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
 // ======================= Low level terminal handling ======================
 
 void disable_raw_mode(void) {
-    // Don't even check the return value as it's too late.
     if (E.raw_mode) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.original_termios);
         E.raw_mode = false;
     }
 }
 
-// Free row's heap allocated stuff.
 void editor_free_row(editor_row_s *row) {
     free(row->chars);
     free(row->rendered_chars);
@@ -185,19 +160,18 @@ void editor_at_exit(void) {
 }
 
 void console_buffer_open(void) {
-    // switch to another buffer in order to be able to restore state at exit
+    // Switch to another buffer in order to be able to restore state at exit
     // by calling console_buffer_close(void).
     if (write(STDOUT_FILENO, "\x1b[?47h", 6) == -1) { perror("Write to stdout failed"); }
 }
 
-// Raw mode: 1960 magic shit.
 int enable_raw_mode(void) {
     struct termios raw;
-    if (E.raw_mode) { return 0; } // Already enabled.
+    if (E.raw_mode) { return 0; }
     if (!isatty(STDIN_FILENO)) { goto fatal; }
     atexit(editor_at_exit);
     if (tcgetattr(STDIN_FILENO, &E.original_termios) == -1) { goto fatal; }
-    raw = E.original_termios;  // modify the original mode
+    raw = E.original_termios; // Modify the original mode
     // input modes: no break, no CR to NL, no parity check, no strip char,
     // no start/stop output control.
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
@@ -211,7 +185,7 @@ int enable_raw_mode(void) {
     // control chars - set return condition: min number of bytes and timer.
     raw.c_cc[VMIN] = 0; // Return each byte, or zero for timeout.
     raw.c_cc[VTIME] = 1; // 100 ms timeout (unit is tens of second).
-    // put terminal in raw mode after flushing
+    // Put terminal in raw mode after flushing
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) < 0) { goto fatal; }
     E.raw_mode = true;
     console_buffer_open();
@@ -311,12 +285,12 @@ bool editor_row_has_open_comment(editor_row_s *row) {
 void editor_update_syntax(editor_row_s *row) {
     row->rendered_chars_syntax_highlight_type = realloc(row->rendered_chars_syntax_highlight_type, row->rendered_size);
     memset(row->rendered_chars_syntax_highlight_type, SYNTAX_HIGHLIGHT_TYPE_NORMAL, row->rendered_size);
-    if (E.syntax == NULL) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
+    if (E.syntax_highlight_mode == NULL) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
     char *p;
-    char **keywords = E.syntax->keywords;
-    char *single_line_comment_start = E.syntax->single_line_comment_start;
-    char *multi_line_comment_start = E.syntax->multi_line_comment_start;
-    char *multi_line_comment_end = E.syntax->multi_line_comment_end;
+    char **keywords = E.syntax_highlight_mode->keywords;
+    char *single_line_comment_start = E.syntax_highlight_mode->single_line_comment_start;
+    char *multi_line_comment_start = E.syntax_highlight_mode->multi_line_comment_start;
+    char *multi_line_comment_end = E.syntax_highlight_mode->multi_line_comment_end;
     // Point to the first non-space char.
     p = row->rendered_chars;
     int i = 0; // Current char offset
@@ -432,7 +406,6 @@ void editor_update_syntax(editor_row_s *row) {
     row->has_open_comment = open_comment;
 }
 
-// Maps syntax highlight token types to terminal colors.
 int editor_syntax_to_color(int hl) {
     if (hl == SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT || hl == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT) {
         return 31;    // normal red
@@ -451,9 +424,7 @@ int editor_syntax_to_color(int hl) {
     }
 }
 
-// Select the syntax highlight scheme depending on the filename,
-// setting it in the global state E.syntax.
-void editor_select_syntax_highlight(char *filename) {
+void editor_select_syntax_highlight_based_on_filename_suffix(char *filename) {
     for (int j = 0; j < SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
         editor_syntax_s *s = SYNTAX_HIGHLIGHT_DATABASE + j;
         int i = 0;
@@ -462,7 +433,7 @@ void editor_select_syntax_highlight(char *filename) {
             int patlen = strlen(s->file_match[i]);
             if ((p = strstr(filename, s->file_match[i])) != NULL)
                 if (s->file_match[i][0] != '.' || p[patlen] == '\0') {
-                    E.syntax = s;
+                    E.syntax_highlight_mode = s;
                     return;
                 }
             i++;
@@ -494,7 +465,6 @@ void editor_update_row(editor_row_s *row) {
     }
     row->rendered_size = local_index;
     row->rendered_chars[local_index] = '\0';
-    // Update the syntax highlighting attributes of the row.
     editor_update_syntax(row);
 }
 
@@ -938,7 +908,6 @@ void editor_search(void) {
 
 // ========================= Editor events handling  ========================
 
-// Handle cursor position change because arrow keys were pressed.
 void editor_move_cursor_by_arrow_key_input(int key) {
     int file_row = E.row_offset + E.cursor_y;
     int file_column = E.column_offset + E.cursor_x;
@@ -1005,7 +974,7 @@ void editor_move_cursor_by_arrow_key_input(int key) {
 }
 
 void console_buffer_close(void) {
-    // restore console to the state before program started
+    // Restore console to the state before program started
     if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) { perror("Write to stdout failed"); }
     if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) { perror("Write to stdout failed"); }
     append_buffer_s ab = { .buffer = NULL, .length = 0 };
@@ -1016,23 +985,17 @@ void console_buffer_close(void) {
     abuf_free(&ab);
 }
 
-// Process events arriving from the standard input, which is, the user
-// is typing stuff on the terminal.
 #define QUIT_CONFIRMATIONS 3
 void editor_process_keypress(void) {
-    // When the file is modified, requires ctrl-c to be pressed N times
-    // before actually quitting.
     static int quit_times = QUIT_CONFIRMATIONS;
     static int previous_key = -1;
     int key = editor_read_key();
     if (key == ENTER) {
         editor_insert_newline();
     } else if (key == CTRL_A) {
-        // Go to start of line
         editor_move_cursor_to_x_position(0);
     } else if (key == CTRL_C) {
         if (previous_key != CTRL_X) { return; }
-        // Quit if the file was already saved.
         if (E.dirty && quit_times) {
             editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-c %d more times to quit.", quit_times);
             quit_times--;
@@ -1059,7 +1022,6 @@ void editor_process_keypress(void) {
             editor_search();
         }
     } else if (key == CTRL_E) {
-        // Go to end of line
         editor_move_cursor_to_x_position(-1);
     } else if (key == BACKSPACE || key == DEL_KEY || key == FORWARD_DELETE) {
         editor_delete_char();
@@ -1076,10 +1038,8 @@ void editor_process_keypress(void) {
     } else if (key == ARROW_DOWN || key == ARROW_LEFT || key == ARROW_RIGHT || key == ARROW_UP || key == CTRL_N || key == CTRL_P) {
         editor_move_cursor_by_arrow_key_input(key);
     } else if (key == CTRL_L || key == CTRL_X || key == ESC) {
-        // Just refresh the line as side effect.
-        // Nothing to do for ESC in this mode.
+        // Just refresh the line as side effect. Nothing to do for ESC in this mode.
     } else if (key == CTRL_Z) {
-        // Suspend process.
         console_buffer_close();
         kill(getpid(), SIGTSTP);
     } else if (key == TAB) {
@@ -1130,7 +1090,7 @@ void init_editor(void) {
     E.row = NULL;
     E.dirty = false;
     E.filename = NULL;
-    E.syntax = NULL;
+    E.syntax_highlight_mode = NULL;
     update_window_size();
     signal(SIGWINCH, handle_sigwinch);
     signal(SIGCONT, handle_sigcont);
@@ -1142,7 +1102,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     init_editor();
-    editor_select_syntax_highlight(argv[1]);
+    editor_select_syntax_highlight_based_on_filename_suffix(argv[1]);
     editor_open(argv[1]);
     enable_raw_mode();
     editor_set_status_message("Commands: ctrl-s = Search | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
