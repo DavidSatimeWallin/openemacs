@@ -888,7 +888,8 @@ void editor_move_cursor_by_arrow_key_input(int key) {
 }
 
 void editor_recenter_vertically(void) {
-    if (E.cursor_y - E.screen_rows / 2 != 0 && E.row_offset + E.cursor_y - E.screen_rows / 2 > 0 && E.row_offset + E.cursor_y + E.screen_rows / 2 < E.number_of_rows) {
+    if (E.cursor_y - E.screen_rows / 2 != 0 && E.row_offset + E.cursor_y - E.screen_rows / 2 > 0 &&
+            E.row_offset + E.cursor_y + E.screen_rows / 2 < E.number_of_rows) {
         for (int i = 0; i < E.screen_rows / 2; i++) {
             editor_move_cursor_by_arrow_key_input(E.cursor_y - E.screen_rows / 2 < 0 ? ARROW_UP : ARROW_DOWN);
         }
