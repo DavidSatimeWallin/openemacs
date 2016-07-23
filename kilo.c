@@ -731,7 +731,7 @@ void abuf_free(append_buffer_s *ab) {
 // starting from the logical state of the editor in the global state 'E'.
 void editor_refresh_screen(void) {
     editor_row_s *r;
-    append_buffer_s ab = { .length = 0, .buffer = NULL };
+    append_buffer_s ab = { .buffer = NULL, .length = 0 };
     abuf_append(&ab, "\x1b[?25l", 6); // Hide cursor.
     abuf_append(&ab, "\x1b[H", 3);    // Go home.
     for (int y = 0; y < E.screen_rows; y++) {
