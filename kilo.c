@@ -13,7 +13,7 @@
 #include <stdbool.h>    // bool, false, true
 #include <stdio.h>      // FILE, fclose, fopen, getline, perror, snprintf, sscanf, stderr, vsnprintf
 #include <stdlib.h>     // atexit, exit, free, malloc, realloc
-#include <string.h>     // memcmp, memcpy, memmove, memset, strchr, strlen, strdup, strerror, strstr
+#include <string.h>     // memcmp, memcpy, memmove, memset, strcasestr, strchr, strdup, strerror, strlen, strstr
 #include <sys/ioctl.h>  // ioctl
 #include <termios.h>    // struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME
 #include <time.h>       // time
@@ -950,7 +950,7 @@ void editor_search(void) {
                 current += search_next;
                 if (current == -1) { current = E.number_of_rows - 1; }
                 else if (current == E.number_of_rows) { current = 0; }
-                match = strstr(E.row[current].rendered_chars, query);
+                match = strcasestr(E.row[current].rendered_chars, query);
                 if (match) {
                     match_offset = match - E.row[current].rendered_chars;
                     break;
