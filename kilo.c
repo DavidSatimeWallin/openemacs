@@ -1036,7 +1036,8 @@ void editor_process_keypress(void) {
     } else if (key == CTRL_C) {
         if (previous_key != CTRL_X) { return; }
         if (E.dirty && quit_confirmations_left--) {
-            editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-x + ctrl-c one more time to confirm.");
+            editor_set_status_message("WARNING! Unsaved changes. Press ctrl-x + ctrl-c one more time to confirm.");
+            previous_key = key;
             return;
         } else {
             console_buffer_close();
