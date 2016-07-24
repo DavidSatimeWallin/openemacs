@@ -27,6 +27,7 @@
 #define SYNTAX_HIGHLIGHT_TYPE_STRING 5
 #define SYNTAX_HIGHLIGHT_TYPE_NUMBER 6
 #define SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH 7
+#define SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE 8
 
 #define SEARCH_QUERY_MAX_LENGTH 256
 
@@ -306,7 +307,7 @@ void editor_update_syntax(editor_row_s *row) {
         if (prev_sep && *p == single_line_comment_start[0] && *(p + 1) == single_line_comment_start[1]) {
             // From here to end is a comment
             memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT, row->size - i);
-            return;
+            break;
         }
         // Handle multi line comments.
         if (in_comment) {
@@ -389,6 +390,14 @@ void editor_update_syntax(editor_row_s *row) {
         p++;
         i++;
     }
+    for (int i = row->rendered_size - 1; i >= 0; i--) {
+        if (row->rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT) { break; }
+        if (isspace(row->rendered_chars[i]) || row->rendered_chars[i] == '\0' || row->rendered_chars[i] == '\n' || row->rendered_chars[i] == '\r') {
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE;
+        } else {
+            break;
+        }
+    }
     // Propagate syntax change to the next row if the open comment
     // state changed. This may recursively affect all the following rows
     // in the file.
@@ -401,19 +410,21 @@ void editor_update_syntax(editor_row_s *row) {
 
 int editor_syntax_to_color(int hl) {
     if (hl == SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT || hl == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT) {
-        return 31;    // normal red
+        return 31;    // normal red foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1) {
-        return 35;    // normal magenta
+        return 35;    // normal magenta foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2) {
-        return 32;    // normal green
+        return 32;    // normal green foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_STRING) {
-        return 95;    // bright magenta
+        return 95;    // bright magenta foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_NUMBER) {
-        return 97;    // bright white
+        return 97;    // bright white foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH) {
-        return 96;    // bright cyan
+        return 96;    // bright cyan foreground
+    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE) {
+        return 41;    // normal red background
     } else {
-        return 37;    // normal white
+        return 37;    // normal white foreground
     }
 }
 
@@ -750,6 +761,7 @@ void editor_refresh_screen(void) {
                     abuf_append(&ab, c + i, 1);
                 }
             }
+            abuf_append(&ab, "\x1b[0m", 4); // Reset to white on black
         }
         abuf_append(&ab, "\x1b[39m", 5);
         abuf_append(&ab, "\x1b[0K", 4);
