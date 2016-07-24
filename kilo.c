@@ -4,6 +4,7 @@
 // Salvatore "antirez" Sanfilippo under the BSD 2-clause license.
 
 #define _DEFAULT_SOURCE // Linux: ftruncate, getline, kill, strdup
+#define _GNU_SOURCE     // Linux: strcasestr
 
 #include <ctype.h>      // isdigit, isspace
 #include <errno.h>      // errno, ENOENT, ENOTTY
