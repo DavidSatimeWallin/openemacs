@@ -912,7 +912,7 @@ void editor_search(void) {
     int saved_cursor_x = E.cursor_x, saved_cursor_y = E.cursor_y;
     int saved_column_offset = E.column_offset, saved_row_offset = E.row_offset;
     while (1) {
-        editor_set_status_message("Search: %s (Use ESC/Arrows/Enter)", query);
+        editor_set_status_message("Search (use ESC/Arrows/Enter): %s", query);
         editor_refresh_screen();
         int key = editor_read_key();
         if (key == DEL_KEY || key == BACKSPACE || key == FORWARD_DELETE) {
