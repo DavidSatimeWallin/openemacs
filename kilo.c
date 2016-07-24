@@ -1009,9 +1009,8 @@ void console_buffer_close(void) {
     abuf_free(&ab);
 }
 
-#define QUIT_CONFIRMATIONS 3
 void editor_process_keypress(void) {
-    static int quit_times = QUIT_CONFIRMATIONS;
+    static int quit_confirmations_left = 1;
     static int previous_key = -1;
     int key = editor_read_key();
     if (key == ENTER) {
@@ -1036,9 +1035,8 @@ void editor_process_keypress(void) {
         editor_move_cursor_to_x_position(0);
     } else if (key == CTRL_C) {
         if (previous_key != CTRL_X) { return; }
-        if (E.dirty && quit_times) {
-            editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-c %d more times to quit.", quit_times);
-            quit_times--;
+        if (E.dirty && quit_confirmations_left--) {
+            editor_set_status_message("WARNING! File has unsaved changes. Press ctrl-x + ctrl-c one more time to confirm.");
             return;
         } else {
             console_buffer_close();
@@ -1056,6 +1054,8 @@ void editor_process_keypress(void) {
         editor_recenter_vertically();
     } else if (key == CTRL_X || key == ESC) {
         // No-op: ^X ignored to allow for ^X^S et al. ESC used only in search mode.
+        previous_key = key;
+        return;
     } else if (key == CTRL_S) {
         if (previous_key == CTRL_X) {
             editor_save();
@@ -1077,7 +1077,7 @@ void editor_process_keypress(void) {
             editor_insert_char(key);
         }
     }
-    quit_times = QUIT_CONFIRMATIONS; // Reset it to the original value.
+    quit_confirmations_left = 1; // Reset quit confirmations.
     previous_key = key;
 }
 
