@@ -27,6 +27,7 @@
 #define SYNTAX_HIGHLIGHT_TYPE_STRING 5
 #define SYNTAX_HIGHLIGHT_TYPE_NUMBER 6
 #define SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH 7
+#define SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE 8
 
 #define SEARCH_QUERY_MAX_LENGTH 256
 
@@ -235,9 +236,7 @@ int editor_read_key(void) {
                         return END_KEY;
                     }
                 }
-            }
-            // ESC O sequences.
-            else if (sequence[0] == 'O') {
+            } else if (sequence[0] == 'O') { // ESC O sequences.
                 if (sequence[1] == 'H') {
                     return HOME_KEY;
                 } else if (sequence[1] == 'F') {
@@ -308,7 +307,7 @@ void editor_update_syntax(editor_row_s *row) {
         if (prev_sep && *p == single_line_comment_start[0] && *(p + 1) == single_line_comment_start[1]) {
             // From here to end is a comment
             memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT, row->size - i);
-            return;
+            break;
         }
         // Handle multi line comments.
         if (in_comment) {
@@ -326,7 +325,7 @@ void editor_update_syntax(editor_row_s *row) {
                 i++;
                 continue;
             }
-        } else if (*p == multi_line_comment_start[0] && *(p + 1) == multi_line_comment_start[1]) {
+        } else if (!in_string_char && *p == multi_line_comment_start[0] && *(p + 1) == multi_line_comment_start[1]) {
             row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
             row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
             p += 2;
@@ -391,6 +390,14 @@ void editor_update_syntax(editor_row_s *row) {
         p++;
         i++;
     }
+    for (int i = row->rendered_size - 1; i >= 0; i--) {
+        if (row->rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT) { break; }
+        if (isspace(row->rendered_chars[i]) || row->rendered_chars[i] == '\0' || row->rendered_chars[i] == '\n' || row->rendered_chars[i] == '\r') {
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE;
+        } else {
+            break;
+        }
+    }
     // Propagate syntax change to the next row if the open comment
     // state changed. This may recursively affect all the following rows
     // in the file.
@@ -403,19 +410,21 @@ void editor_update_syntax(editor_row_s *row) {
 
 int editor_syntax_to_color(int hl) {
     if (hl == SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT || hl == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT) {
-        return 31;    // normal red
+        return 31;    // normal red foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1) {
-        return 35;    // normal magenta
+        return 35;    // normal magenta foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2) {
-        return 32;    // normal green
+        return 32;    // normal green foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_STRING) {
-        return 95;    // bright magenta
+        return 95;    // bright magenta foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_NUMBER) {
-        return 97;    // bright white
+        return 97;    // bright white foreground
     } else if (hl == SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH) {
-        return 96;    // bright cyan
+        return 96;    // bright cyan foreground
+    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE) {
+        return 41;    // normal red background
     } else {
-        return 37;    // normal white
+        return 37;    // normal white foreground
     }
 }
 
@@ -425,12 +434,10 @@ void editor_select_syntax_highlight_based_on_filename_suffix(char *filename) {
         int i = 0;
         while (s->file_match[i]) {
             char *p;
-            int patlen = strlen(s->file_match[i]);
-            if ((p = strstr(filename, s->file_match[i])) != NULL)
-                if (s->file_match[i][0] != '.' || p[patlen] == '\0') {
-                    E.syntax_highlight_mode = s;
-                    return;
-                }
+            if ((p = strstr(filename, s->file_match[i])) != NULL && (s->file_match[i][0] != '.' || p[strlen(s->file_match[i])] == '\0')) {
+                E.syntax_highlight_mode = s;
+                return;
+            }
             i++;
         }
     }
@@ -722,7 +729,7 @@ void editor_refresh_screen(void) {
     editor_row_s *r;
     append_buffer_s ab = { .buffer = NULL, .length = 0 };
     abuf_append(&ab, "\x1b[?25l", 6); // Hide cursor.
-    abuf_append(&ab, "\x1b[H", 3);    // Go home.
+    abuf_append(&ab, "\x1b[H", 3); // Go home.
     for (int y = 0; y < E.screen_rows; y++) {
         int file_row = E.row_offset + y;
         if (file_row >= E.number_of_rows) {
@@ -754,6 +761,7 @@ void editor_refresh_screen(void) {
                     abuf_append(&ab, c + i, 1);
                 }
             }
+            abuf_append(&ab, "\x1b[0m", 4); // Reset to white on black
         }
         abuf_append(&ab, "\x1b[39m", 5);
         abuf_append(&ab, "\x1b[0K", 4);
@@ -903,8 +911,8 @@ void editor_search(void) {
     char query[SEARCH_QUERY_MAX_LENGTH + 1] = { 0 };
     int qlen = 0;
     int last_match = -1; // Last line where a match was found. -1 for none.
-    int search_next = 0; // if 1 search next, if -1 search prev.
-    int saved_hl_line = -1;  // No saved HL
+    int search_next = 0; // If 1 search next, if -1 search prev.
+    int saved_hl_line = -1; // No saved HL
     char *saved_hl = NULL;
 #define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
     if (saved_hl) { \
@@ -916,7 +924,7 @@ void editor_search(void) {
     int saved_cursor_x = E.cursor_x, saved_cursor_y = E.cursor_y;
     int saved_column_offset = E.column_offset, saved_row_offset = E.row_offset;
     while (1) {
-        editor_set_status_message("Search: %s (Use ESC/Arrows/Enter)", query);
+        editor_set_status_message("Search (use ESC/Arrows/Enter): %s", query);
         editor_refresh_screen();
         int key = editor_read_key();
         if (key == DEL_KEY || key == BACKSPACE || key == FORWARD_DELETE) {
@@ -949,8 +957,11 @@ void editor_search(void) {
             int current = last_match;
             for (int i = 0; i < E.number_of_rows; i++) {
                 current += search_next;
-                if (current == -1) { current = E.number_of_rows - 1; }
-                else if (current == E.number_of_rows) { current = 0; }
+                if (current == -1) {
+                    current = E.number_of_rows - 1;
+                } else if (current == E.number_of_rows) {
+                    current = 0;
+                }
                 match = strcasestr(E.row[current].rendered_chars, query);
                 if (match) {
                     match_offset = match - E.row[current].rendered_chars;
