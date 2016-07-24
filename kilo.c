@@ -423,12 +423,10 @@ void editor_select_syntax_highlight_based_on_filename_suffix(char *filename) {
         int i = 0;
         while (s->file_match[i]) {
             char *p;
-            int patlen = strlen(s->file_match[i]);
-            if ((p = strstr(filename, s->file_match[i])) != NULL)
-                if (s->file_match[i][0] != '.' || p[patlen] == '\0') {
-                    E.syntax_highlight_mode = s;
-                    return;
-                }
+            if ((p = strstr(filename, s->file_match[i])) != NULL && (s->file_match[i][0] != '.' || p[strlen(s->file_match[i])] == '\0')) {
+                E.syntax_highlight_mode = s;
+                return;
+            }
             i++;
         }
     }
@@ -720,7 +718,7 @@ void editor_refresh_screen(void) {
     editor_row_s *r;
     append_buffer_s ab = { .buffer = NULL, .length = 0 };
     abuf_append(&ab, "\x1b[?25l", 6); // Hide cursor.
-    abuf_append(&ab, "\x1b[H", 3);    // Go home.
+    abuf_append(&ab, "\x1b[H", 3); // Go home.
     for (int y = 0; y < E.screen_rows; y++) {
         int file_row = E.row_offset + y;
         if (file_row >= E.number_of_rows) {
@@ -901,8 +899,8 @@ void editor_search(void) {
     char query[SEARCH_QUERY_MAX_LENGTH + 1] = { 0 };
     int qlen = 0;
     int last_match = -1; // Last line where a match was found. -1 for none.
-    int search_next = 0; // if 1 search next, if -1 search prev.
-    int saved_hl_line = -1;  // No saved HL
+    int search_next = 0; // If 1 search next, if -1 search prev.
+    int saved_hl_line = -1; // No saved HL
     char *saved_hl = NULL;
 #define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
     if (saved_hl) { \
