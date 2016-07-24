@@ -1057,7 +1057,7 @@ void editor_process_keypress(void) {
         // No-op: ^X ignored to allow for ^X^S et al. ESC used only in search mode.
         previous_key = key;
         return;
-    } else if (key == CTRL_S) {
+    } else if (key == CTRL_S || (previous_key == CTRL_X && (key == 's' || key == 'S'))) {
         if (previous_key == CTRL_X) {
             editor_save();
         } else {
