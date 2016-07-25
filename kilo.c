@@ -118,7 +118,7 @@ editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
 
 #define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (int)(sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
 
-void editor_set_status_message(const char *format, ...) {
+void editor_set_status_message(char const *format, ...) {
     va_list ap;
     va_start(ap, format);
     vsnprintf(E.status_message, sizeof(E.status_message), format, ap);
@@ -269,7 +269,7 @@ bool is_separator(int c) {
 // Return true if the specified row last char is part of a multi line comment
 // that starts at this row or at one before, and does not end at the end
 // of the row but spawns to the next row.
-bool editor_row_has_open_comment(editor_row_s *row) {
+bool editor_row_has_open_comment(editor_row_s const *row) {
     if (row->rendered_chars_syntax_highlight_type && row->rendered_size &&
             row->rendered_chars_syntax_highlight_type[row->rendered_size - 1] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT &&
             (row->rendered_size < 2 || (row->rendered_chars[row->rendered_size - 2] != '*' || row->rendered_chars[row->rendered_size - 1] != '/'))) { return true; }
@@ -429,7 +429,7 @@ int editor_syntax_to_color(int hl) {
     }
 }
 
-void editor_select_syntax_highlight_based_on_filename_suffix(char *filename) {
+void editor_select_syntax_highlight_based_on_filename_suffix(char const *filename) {
     for (int j = 0; j < SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
         editor_syntax_s *s = SYNTAX_HIGHLIGHT_DATABASE + j;
         int i = 0;
@@ -471,7 +471,7 @@ void editor_update_row(editor_row_s *row) {
 
 // Insert a row at the specified position, shifting the other rows on the bottom
 // if required.
-void editor_insert_row(int at, char *s, size_t len) {
+void editor_insert_row(int at, char const *s, size_t len) {
     if (at > E.number_of_rows) { return; }
     E.row = realloc(E.row, sizeof(editor_row_s) * (E.number_of_rows + 1));
     if (at != E.number_of_rows) {
@@ -553,7 +553,7 @@ void editor_row_insert_char(editor_row_s *row, int at, int c) {
 }
 
 // Append the string 's' at the end of a row
-void editor_row_append_string(editor_row_s *row, char *s, size_t len) {
+void editor_row_append_string(editor_row_s *row, char const *s, size_t len) {
     row->chars = realloc(row->chars, row->size + len + 1);
     memcpy(row->chars + row->size, s, len);
     row->size += len;
@@ -666,7 +666,7 @@ void editor_delete_char(void) {
 
 // Load the specified program in the editor memory and returns 0 on success
 // or 1 on error.
-int editor_open(char *filename) {
+int editor_open(char const *filename) {
     FILE *fp;
     E.dirty = false;
     free(E.filename);
