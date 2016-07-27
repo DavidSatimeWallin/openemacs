@@ -755,10 +755,10 @@ void editor_refresh_screen(void) {
                     int color = editor_syntax_to_color(rendered_chars_syntax_highlight_type[i]);
                     if (color != current_color) {
                         char *buffer;
-                        int clen = asprintf(&buffer, "\x1b[%dm", color);
-                        if (clen == -1) { perror("asprintf failed"); }
+                        int color_length = asprintf(&buffer, "\x1b[%dm", color);
+                        if (color_length == -1) { perror("asprintf failed"); }
                         current_color = color;
-                        abuf_append(&ab, buffer, clen);
+                        abuf_append(&ab, buffer, color_length);
                     }
                     abuf_append(&ab, c + i, 1);
                 }
@@ -785,9 +785,9 @@ void editor_refresh_screen(void) {
     abuf_append(&ab, "\x1b[0m\r\n", 6);
     // Second row depends on E.status_message and the status message update time.
     abuf_append(&ab, "\x1b[0K", 4);
-    int msglen = strlen(E.status_message);
-    if (msglen && time(NULL) - E.status_message_last_update < 5) {
-        abuf_append(&ab, E.status_message, msglen <= E.screen_columns ? msglen : E.screen_columns);
+    int message_length = strlen(E.status_message);
+    if (message_length && time(NULL) - E.status_message_last_update < 5) {
+        abuf_append(&ab, E.status_message, message_length <= E.screen_columns ? message_length : E.screen_columns);
     }
     // Put cursor at its current position. Note that the horizontal position
     // at which the cursor is displayed may be different compared to 'E.cursor_x'
@@ -912,7 +912,7 @@ void editor_recenter_vertically(void) {
 
 void editor_search(void) {
     char query[SEARCH_QUERY_MAX_LENGTH + 1] = { 0 };
-    int qlen = 0;
+    int query_length = 0;
     int last_match = -1; // Last line where a match was found. -1 for none.
     int search_next = 0; // If 1 search next, if -1 search prev.
     int saved_hl_line = -1; // No saved HL
@@ -931,7 +931,7 @@ void editor_search(void) {
         editor_refresh_screen();
         int key = editor_read_key();
         if (key == DEL_KEY || key == BACKSPACE || key == FORWARD_DELETE) {
-            if (qlen != 0) { query[--qlen] = '\0'; }
+            if (query_length != 0) { query[--query_length] = '\0'; }
             last_match = -1;
         } else if (key == ESC || key == CTRL_C || key == ENTER) {
             if (key == ESC || key == CTRL_C) {
@@ -947,9 +947,9 @@ void editor_search(void) {
             search_next = 1;
         } else if (key == ARROW_LEFT || key == ARROW_UP || key == CTRL_R) {
             search_next = -1;
-        } else if (isprint(key) && qlen < SEARCH_QUERY_MAX_LENGTH) {
-            query[qlen++] = key;
-            query[qlen] = '\0';
+        } else if (isprint(key) && query_length < SEARCH_QUERY_MAX_LENGTH) {
+            query[query_length++] = key;
+            query[query_length] = '\0';
             last_match = -1;
         }
         // Search occurrence.
@@ -981,7 +981,7 @@ void editor_search(void) {
                     saved_hl_line = current;
                     saved_hl = malloc(row->rendered_size);
                     memcpy(saved_hl, row->rendered_chars_syntax_highlight_type, row->rendered_size);
-                    memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, qlen);
+                    memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, query_length);
                 }
                 E.cursor_y = 0;
                 E.cursor_x = match_offset;
