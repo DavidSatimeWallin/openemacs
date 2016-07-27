@@ -14,7 +14,7 @@
 #include <stdarg.h>     // va_end, va_start
 #include <stdbool.h>    // bool, false, true
 #include <stdio.h>      // FILE, asprintf, fclose, fopen, getline, perror, sscanf, stderr, vasprintf
-#include <stdlib.h>     // atexit, exit, free, malloc, realloc
+#include <stdlib.h>     // atexit, calloc, exit, free, realloc
 #include <string.h>     // memcmp, memcpy, memmove, memset, strcasestr, strchr, strdup, strerror, strlen, strstr
 #include <sys/ioctl.h>  // ioctl
 #include <termios.h>    // struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME
@@ -453,7 +453,7 @@ void editor_update_row(editor_row_s *row) {
     free(row->rendered_chars);
     for (int i = 0; i < row->size; i++)
         if (row->chars[i] == TAB) { tabs++; }
-    row->rendered_chars = malloc(row->size + tabs * 8 + 1);
+    row->rendered_chars = calloc(row->size + tabs * 8 + 1, sizeof(char));
     int local_index = 0;
     for (int i = 0; i < row->size; i++) {
         if (row->chars[i] == TAB) {
@@ -480,7 +480,7 @@ void editor_insert_row(int at, char const *s, size_t len) {
         for (int i = at + 1; i <= E.number_of_rows; i++) { E.row[i].index_in_file++; }
     }
     E.row[at].size = len;
-    E.row[at].chars = malloc(len + 1);
+    E.row[at].chars = calloc(len + 1, sizeof(char));
     memcpy(E.row[at].chars, s, len + 1);
     E.row[at].rendered_chars_syntax_highlight_type = NULL;
     E.row[at].has_open_comment = false;
@@ -518,7 +518,7 @@ char *editor_rows_to_string(int *buflen) {
     }
     *buflen = total_length;
     total_length++; // Also make space for nulterm
-    p = buf = malloc(total_length);
+    p = buf = calloc(total_length, sizeof(char));
     for (int i = 0; i < E.number_of_rows; i++) {
         memcpy(p, E.row[i].chars, E.row[i].size);
         p += E.row[i].size;
@@ -980,7 +980,7 @@ void editor_search(void) {
                 last_match = current;
                 if (row->rendered_chars_syntax_highlight_type) {
                     saved_hl_line = current;
-                    saved_hl = malloc(row->rendered_size);
+                    saved_hl = calloc(row->rendered_size, sizeof(char));
                     memcpy(saved_hl, row->rendered_chars_syntax_highlight_type, row->rendered_size);
                     memset_s(row->rendered_chars_syntax_highlight_type + match_offset, query_length, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, query_length);
                 }
