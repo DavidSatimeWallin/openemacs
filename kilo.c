@@ -451,8 +451,9 @@ void editor_update_row(editor_row_s *row) {
     // Create a version of the row we can directly print on the screen,
     // respecting tabs, substituting non printable characters with '?'.
     free(row->rendered_chars);
-    for (int i = 0; i < row->size; i++)
+    for (int i = 0; i < row->size; i++) {
         if (row->chars[i] == TAB) { tabs++; }
+    }
     row->rendered_chars = calloc(row->size + tabs * 8 + 1, sizeof(char));
     int local_index = 0;
     for (int i = 0; i < row->size; i++) {
@@ -579,10 +580,11 @@ void editor_insert_char(int c) {
     editor_row_s *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     // If the row where the cursor is currently located does not exist in our
     // logical representation of the file, add enough empty rows as needed.
-    if (!row)
+    if (!row) {
         while (E.number_of_rows <= file_row) {
             editor_insert_row(E.number_of_rows, "", 0);
         }
+    }
     row = &E.row[file_row];
     editor_row_insert_char(row, file_column, c);
     if (E.cursor_x == E.screen_columns - 1) {
@@ -796,11 +798,12 @@ void editor_refresh_screen(void) {
     int cursor_x_including_expanded_tabs = 1;
     int file_row = E.row_offset + E.cursor_y;
     editor_row_s *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
-    if (row)
+    if (row) {
         for (int i = E.column_offset; i < (E.cursor_x + E.column_offset); i++) {
             if (i < row->size && row->chars[i] == TAB) { cursor_x_including_expanded_tabs += 7 - ((cursor_x_including_expanded_tabs) % 8); }
             cursor_x_including_expanded_tabs++;
         }
+    }
     char *buffer;
     if (asprintf(&buffer, "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs) == -1) { perror("asprintf failed"); }
     abuf_append(&ab, buffer, strlen(buffer));
