@@ -12,7 +12,7 @@
 #include <signal.h>     // kill
 #include <stdarg.h>     // va_end, va_start
 #include <stdbool.h>    // bool, false, true
-#include <stdio.h>      // FILE, fclose, fopen, getline, perror, snprintf, sscanf, stderr, vsnprintf
+#include <stdio.h>      // FILE, asprintf, fclose, fopen, getline, perror, sscanf, stderr, vasprintf
 #include <stdlib.h>     // atexit, exit, free, malloc, realloc
 #include <string.h>     // memcmp, memcpy, memmove, memset, strcasestr, strchr, strdup, strerror, strlen, strstr
 #include <sys/ioctl.h>  // ioctl
@@ -63,7 +63,7 @@ typedef struct editor_config_s {
     editor_row_s *row;            // Rows
     bool dirty;                   // File modified but not saved.
     char *filename;               // Currently open filename
-    char status_message[80];
+    char *status_message;
     time_t status_message_last_update;
     char *cut_buffer;
     editor_syntax_s *syntax_highlight_mode; // Current syntax highlight, or NULL.
@@ -121,7 +121,7 @@ editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
 void editor_set_status_message(char const *format, ...) {
     va_list ap;
     va_start(ap, format);
-    vsnprintf(E.status_message, sizeof(E.status_message), format, ap);
+    if (vasprintf(&E.status_message, format, ap) == -1) { perror("vasprintf failed."); }
     va_end(ap);
     E.status_message_last_update = time(NULL);
 }
@@ -754,8 +754,9 @@ void editor_refresh_screen(void) {
                 } else {
                     int color = editor_syntax_to_color(rendered_chars_syntax_highlight_type[i]);
                     if (color != current_color) {
-                        char buffer[16];
-                        int clen = snprintf(buffer, sizeof(buffer), "\x1b[%dm", color);
+                        char *buffer;
+                        int clen = asprintf(&buffer, "\x1b[%dm", color);
+                        if (clen == -1) { perror("asprintf failed"); }
                         current_color = color;
                         abuf_append(&ab, buffer, clen);
                     }
@@ -771,10 +772,11 @@ void editor_refresh_screen(void) {
     // Create a two rows status. First row:
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
-    char status[80];
-    int len = snprintf(status, sizeof(status), "Editing: %.20s%s | Line: %d/%d (%d %%) | Column: %d", E.filename, E.dirty ? " (modified)" : "",
+    char *status;
+    int len = asprintf(&status, "Editing: %.20s%s | Line: %d/%d (%d %%) | Column: %d", E.filename, E.dirty ? " (modified)" : "",
                        E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0
                        && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100, E.cursor_x + 1);
+    if (len == -1) { perror("asprintf failed"); }
     if (len > E.screen_columns) { len = E.screen_columns; }
     abuf_append(&ab, status, len);
     while (len++ < E.screen_columns) {
@@ -798,8 +800,8 @@ void editor_refresh_screen(void) {
             if (i < row->size && row->chars[i] == TAB) { cursor_x_including_expanded_tabs += 7 - ((cursor_x_including_expanded_tabs) % 8); }
             cursor_x_including_expanded_tabs++;
         }
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs);
+    char *buffer;
+    if (asprintf(&buffer, "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs) == -1) { perror("asprintf failed"); }
     abuf_append(&ab, buffer, strlen(buffer));
     abuf_append(&ab, "\x1b[?25h", 6); // Show cursor.
     if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); }
@@ -1002,8 +1004,8 @@ void console_buffer_close(void) {
     if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) { perror("Write to stdout failed"); }
     if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) { perror("Write to stdout failed"); }
     append_buffer_s ab = { .buffer = NULL, .length = 0 };
-    char buffer[32];
-    snprintf(buffer, sizeof(buffer), "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1);
+    char *buffer;
+    if (asprintf(&buffer, "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1) == -1) { perror("asprintf failed"); }
     abuf_append(&ab, buffer, strlen(buffer));
     if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); }
     abuf_free(&ab);
@@ -1112,6 +1114,7 @@ void handle_sigcont(int unused __attribute__((unused))) {
 }
 
 void init_editor(void) {
+    E.status_message = NULL;
     E.cursor_x = 0;
     E.cursor_y = 0;
     E.row_offset = 0;
