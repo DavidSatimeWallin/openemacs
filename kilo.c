@@ -119,6 +119,7 @@ editor_syntax_s SYNTAX_HIGHLIGHT_DATABASE[] = {
 
 #define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (int)(sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
 
+__attribute__((format(printf, 1, 2)))
 void editor_set_status_message(char const *format, ...) {
     va_list ap;
     va_start(ap, format);
