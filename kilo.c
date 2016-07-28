@@ -945,7 +945,8 @@ void editor_search(void) {
                 E.row_offset = saved_row_offset;
             }
             SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
-            editor_set_status_message("");
+            // Redundant %s to suppress gcc's format-zero-length warning
+            editor_set_status_message("%s", "");
             return;
         } else if (key == ARROW_RIGHT || key == ARROW_DOWN || key == CTRL_S) {
             search_next = 1;
