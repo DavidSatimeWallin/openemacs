@@ -3,7 +3,6 @@
 // The original version of kilo which this work is a fork of was released by
 // Salvatore "antirez" Sanfilippo under the BSD 2-clause license.
 
-#define __STDC_WANT_LIB_EXT1__ 1 // OS X: memset_s
 #define _DEFAULT_SOURCE // Linux: ftruncate, getline, kill, strdup
 #define _GNU_SOURCE     // Linux: strcasestr
 
@@ -283,7 +282,7 @@ bool editor_row_has_open_comment(editor_row_s const *row) {
 // (SYNTAX_HIGHLIGHT_TYPE_* defines).
 void editor_update_syntax(editor_row_s *row) {
     row->rendered_chars_syntax_highlight_type = realloc(row->rendered_chars_syntax_highlight_type, row->rendered_size);
-    memset_s(row->rendered_chars_syntax_highlight_type, row->rendered_size, SYNTAX_HIGHLIGHT_TYPE_NORMAL, row->rendered_size);
+    memset(row->rendered_chars_syntax_highlight_type, SYNTAX_HIGHLIGHT_TYPE_NORMAL, row->rendered_size);
     if (E.syntax_highlight_mode == NULL) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
     char *p;
     char **keywords = E.syntax_highlight_mode->keywords;
@@ -309,7 +308,7 @@ void editor_update_syntax(editor_row_s *row) {
         // Handle // comments.
         if (prev_sep && *p == single_line_comment_start[0] && *(p + 1) == single_line_comment_start[1]) {
             // From here to end is a comment
-            memset_s(row->rendered_chars_syntax_highlight_type + i, row->size - i, SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT, row->size - i);
+            memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT, row->size - i);
             break;
         }
         // Handle multi line comments.
@@ -376,7 +375,8 @@ void editor_update_syntax(editor_row_s *row) {
                 bool keyword_type_2 = keywords[j][keyword_length - 1] == '|';
                 if (keyword_type_2) { keyword_length--; }
                 if (strlen(p) >= keyword_length && !memcmp(p, keywords[j], keyword_length) && is_separator(*(p + keyword_length))) {
-                    memset_s(row->rendered_chars_syntax_highlight_type + i, keyword_length , keyword_type_2 ? SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 : SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1, keyword_length);
+                    // Keyword
+                    memset(row->rendered_chars_syntax_highlight_type + i, keyword_type_2 ? SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 : SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1, keyword_length);
                     p += keyword_length;
                     i += keyword_length;
                     break;
@@ -539,7 +539,7 @@ void editor_row_insert_char(editor_row_s *row, int at, int c) {
         int pad_length = at - row->size;
         // In the next line +2 means: new char and null term.
         row->chars = realloc(row->chars, row->size + pad_length + 2);
-        memset_s(row->chars + row->size, pad_length, ' ', pad_length);
+        memset(row->chars + row->size, ' ', pad_length);
         row->chars[row->size + pad_length + 1] = '\0';
         row->size += pad_length + 1;
     } else {
@@ -985,7 +985,7 @@ void editor_search(void) {
                     saved_hl_line = current;
                     saved_hl = calloc(row->rendered_size, sizeof(char));
                     memcpy(saved_hl, row->rendered_chars_syntax_highlight_type, row->rendered_size);
-                    memset_s(row->rendered_chars_syntax_highlight_type + match_offset, query_length, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, query_length);
+                    memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, query_length);
                 }
                 E.cursor_y = 0;
                 E.cursor_x = match_offset;
