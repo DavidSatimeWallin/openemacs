@@ -372,11 +372,10 @@ void editor_update_syntax(editor_row_s *row) {
         if (prev_sep) {
             int j;
             for (j = 0; keywords[j]; j++) {
-                int keyword_length = strlen(keywords[j]);
-                int keyword_type_2 = keywords[j][keyword_length - 1] == '|';
+                unsigned int keyword_length = strlen(keywords[j]);
+                bool keyword_type_2 = keywords[j][keyword_length - 1] == '|';
                 if (keyword_type_2) { keyword_length--; }
-                if (!memcmp(p, keywords[j], keyword_length) && is_separator(*(p + keyword_length))) {
-                    // Keyword
+                if (strlen(p) >= keyword_length && !memcmp(p, keywords[j], keyword_length) && is_separator(*(p + keyword_length))) {
                     memset_s(row->rendered_chars_syntax_highlight_type + i, keyword_length , keyword_type_2 ? SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 : SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1, keyword_length);
                     p += keyword_length;
                     i += keyword_length;
