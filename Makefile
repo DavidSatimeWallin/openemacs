@@ -1,7 +1,7 @@
 all: kilo
 
 kilo: kilo.c
-	$(CC) -o kilo kilo.c -Wall -Wextra -Werror -W -pedantic -std=c11 -Os
+	$(CC) -o kilo kilo.c -Wall -Wextra -Werror -W -pedantic -std=c11 -fsanitize=address -Wformat-security -Os
 	strip kilo
 
 indent:
