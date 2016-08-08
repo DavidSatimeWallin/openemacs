@@ -146,7 +146,7 @@ static void editor_free_row(editor_row_s *row) {
 //   "All heap blocks were freed -- no leaks are possible"
 
 // Allocations used:
-// - malloc
+// - calloc
 // - realloc
 // - strdup
 
