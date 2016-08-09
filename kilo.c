@@ -122,6 +122,7 @@ __attribute__((format(printf, 1, 2)))
 static void editor_set_status_message(char const *format, ...) {
     va_list ap;
     va_start(ap, format);
+    free(E.status_message);
     if (vasprintf(&E.status_message, format, ap) == -1) { perror("vasprintf failed."); }
     va_end(ap);
     E.status_message_last_update = time(NULL);
@@ -149,6 +150,8 @@ static void editor_free_row(editor_row_s *row) {
 // - malloc
 // - realloc
 // - strdup
+// - asprintf (implicit malloc)
+// - vasprintf (implicit realloc)
 
 static void editor_at_exit(void) {
     disable_raw_mode();
@@ -158,6 +161,7 @@ static void editor_at_exit(void) {
     free(E.cut_buffer);
     free(E.filename);
     free(E.row);
+    free(E.status_message);
     // Assert: "All heap blocks were freed -- no leaks are possible"
 }
 
@@ -762,6 +766,7 @@ static void editor_refresh_screen(void) {
                         if (color_length == -1) { perror("asprintf failed"); }
                         current_color = color;
                         abuf_append(&ab, buffer, color_length);
+                        free(buffer);
                     }
                     abuf_append(&ab, c + i, 1);
                 }
@@ -782,6 +787,7 @@ static void editor_refresh_screen(void) {
     if (len == -1) { perror("asprintf failed"); }
     if (len > E.screen_columns) { len = E.screen_columns; }
     abuf_append(&ab, status, len);
+    free(status);
     while (len++ < E.screen_columns) {
         abuf_append(&ab, " ", 1);
     }
@@ -807,6 +813,7 @@ static void editor_refresh_screen(void) {
     char *buffer;
     if (asprintf(&buffer, "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs) == -1) { perror("asprintf failed"); }
     abuf_append(&ab, buffer, strlen(buffer));
+    free(buffer);
     abuf_append(&ab, "\x1b[?25h", 6); // Show cursor.
     if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); }
     abuf_free(&ab);
@@ -1012,6 +1019,7 @@ static void console_buffer_close(void) {
     char *buffer;
     if (asprintf(&buffer, "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1) == -1) { perror("asprintf failed"); }
     abuf_append(&ab, buffer, strlen(buffer));
+    free(buffer);
     if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); }
     abuf_free(&ab);
 }
