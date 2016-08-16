@@ -1,7 +1,7 @@
 all: kilo
 
 kilo: kilo.c
-	# Add -fsanitize=address to compile with ASAN. Incompatible with valgrind.
+# Add -fsanitize=address to compile with ASAN. Incompatible with valgrind.
 	$(CC) -o kilo kilo.c -g -O0 -Wall -Wextra -Werror -W -pedantic -std=c11 -Wformat=2 -Wswitch-default -Wunused
 
 indent:
