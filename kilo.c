@@ -1006,6 +1006,7 @@ static void editor_search(void) {
             }
         }
     }
+    free(saved_hl);
 }
 
 static void console_buffer_close(void) {
