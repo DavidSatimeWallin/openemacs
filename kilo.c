@@ -268,7 +268,7 @@ static int get_window_size(int *rows, int *columns) {
 }
 
 static bool is_separator(int c) {
-    return c == '\0' || isspace(c) || strchr(",.()+-/*=~%[];:{}", c) != NULL;
+    return c == '\0' || isspace(c) || strchr(",.()+-/*=~%[];:{}", c);
 }
 
 // Return true if the specified row last char is part of a multi line comment
@@ -287,7 +287,7 @@ static bool editor_row_has_open_comment(struct editor_row const *row) {
 static void editor_update_syntax(struct editor_row *row) {
     row->rendered_chars_syntax_highlight_type = realloc(row->rendered_chars_syntax_highlight_type, row->rendered_size);
     memset(row->rendered_chars_syntax_highlight_type, SYNTAX_HIGHLIGHT_TYPE_NORMAL, row->rendered_size);
-    if (E.syntax_highlight_mode == NULL) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
+    if (!E.syntax_highlight_mode) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
     char **keywords = E.syntax_highlight_mode->keywords;
     char *single_line_comment_start = E.syntax_highlight_mode->single_line_comment_start;
     char *multi_line_comment_start = E.syntax_highlight_mode->multi_line_comment_start;
@@ -385,7 +385,7 @@ static void editor_update_syntax(struct editor_row *row) {
                     break;
                 }
             }
-            if (keywords[j] != NULL) {
+            if (keywords[j]) {
                 prev_sep = false;
                 continue; // We had a keyword match
             }
@@ -438,8 +438,8 @@ static void editor_select_syntax_highlight_based_on_filename_suffix(char const *
         struct editor_syntax *s = SYNTAX_HIGHLIGHT_DATABASE + j;
         int i = 0;
         while (s->file_match[i]) {
-            char *p = NULL;
-            if ((p = strstr(filename, s->file_match[i])) != NULL && (s->file_match[i][0] != '.' || p[strlen(s->file_match[i])] == '\0')) {
+            char *p = strstr(filename, s->file_match[i]);
+            if (p && (s->file_match[i][0] != '.' || p[strlen(s->file_match[i])] == '\0')) {
                 E.syntax_highlight_mode = s;
                 return;
             }
@@ -718,7 +718,7 @@ write_error:
 
 static void abuf_append(struct append_buffer *ab, const char *s, int len) {
     char *new = realloc(ab->buffer, ab->length + len);
-    if (new == NULL) { return; }
+    if (!new) { return; }
     memcpy(new + ab->length, s, len);
     ab->buffer = new;
     ab->length += len;
