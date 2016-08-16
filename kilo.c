@@ -208,7 +208,7 @@ static int editor_read_key(void) {
     char key, sequence[3];
     while ((n_read = read(STDIN_FILENO, &key, 1)) == 0);
     if (n_read == -1) { exit(1); }
-    while (1) {
+    while (true) {
         if (key == ESC) { // Escape sequence
             // If this is just an ESC, we'll timeout here.
             if (read(STDIN_FILENO, sequence, 1) == 0) { return ESC; }
@@ -935,7 +935,7 @@ static void editor_search(void) {
     // Save the cursor position in order to restore it later.
     int saved_cursor_x = E.cursor_x, saved_cursor_y = E.cursor_y;
     int saved_column_offset = E.column_offset, saved_row_offset = E.row_offset;
-    while (1) {
+    while (true) {
         editor_set_status_message("Search (use ESC/Arrows/Enter): %s", query);
         editor_refresh_screen();
         int key = editor_read_key();
@@ -1153,7 +1153,7 @@ int main(int argc, char **argv) {
     editor_open(argv[1]);
     enable_raw_mode();
     editor_set_status_message("Commands: ctrl-s = Search | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
-    while (1) {
+    while (true) {
         editor_refresh_screen();
         editor_process_keypress();
     }
