@@ -116,7 +116,7 @@ struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
     { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" }
 };
 
-#define SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (int)(sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
+#define NUMBER_OF_SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (int)(sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
 
 __attribute__((format(printf, 1, 2)))
 static void editor_set_status_message(char const *format, ...) {
@@ -288,13 +288,12 @@ static void editor_update_syntax(struct editor_row *row) {
     row->rendered_chars_syntax_highlight_type = realloc(row->rendered_chars_syntax_highlight_type, row->rendered_size);
     memset(row->rendered_chars_syntax_highlight_type, SYNTAX_HIGHLIGHT_TYPE_NORMAL, row->rendered_size);
     if (E.syntax_highlight_mode == NULL) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
-    char *p;
     char **keywords = E.syntax_highlight_mode->keywords;
     char *single_line_comment_start = E.syntax_highlight_mode->single_line_comment_start;
     char *multi_line_comment_start = E.syntax_highlight_mode->multi_line_comment_start;
     char *multi_line_comment_end = E.syntax_highlight_mode->multi_line_comment_end;
     // Point to the first non-space char.
-    p = row->rendered_chars;
+    char *p = row->rendered_chars;
     int i = 0; // Current char offset
     while (*p && isspace(*p)) {
         p++;
@@ -435,11 +434,11 @@ static int editor_syntax_to_color(int hl) {
 }
 
 static void editor_select_syntax_highlight_based_on_filename_suffix(char const *filename) {
-    for (int j = 0; j < SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
+    for (int j = 0; j < NUMBER_OF_SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
         struct editor_syntax *s = SYNTAX_HIGHLIGHT_DATABASE + j;
         int i = 0;
         while (s->file_match[i]) {
-            char *p;
+            char *p = NULL;
             if ((p = strstr(filename, s->file_match[i])) != NULL && (s->file_match[i][0] != '.' || p[strlen(s->file_match[i])] == '\0')) {
                 E.syntax_highlight_mode = s;
                 return;
@@ -500,9 +499,8 @@ static void editor_insert_row(int at, char const *s, size_t len) {
 // Remove the row at the specified position, shifting the remaining on the
 // top.
 static void editor_delete_row(int at) {
-    struct editor_row *row;
     if (at >= E.number_of_rows) { return; }
-    row = E.row + at;
+    struct editor_row *row = E.row + at;
     editor_free_row(row);
     memmove(E.row + at, E.row + at + 1, sizeof(E.row[0]) * (E.number_of_rows - at - 1));
     for (int i = at; i < E.number_of_rows - 1; i++) { E.row[i].index_in_file++; }
@@ -515,7 +513,7 @@ static void editor_delete_row(int at) {
 // integer pointed by 'buflen' with the size of the string, excluding
 // the final nulterm.
 static char *editor_rows_to_string(int *buflen) {
-    char *buf = NULL, *p;
+    char *buf = NULL, *p = NULL;
     int total_length = 0;
     // Compute count of bytes
     for (int i = 0; i < E.number_of_rows; i++) {
@@ -674,11 +672,10 @@ static void editor_delete_char(void) {
 // Load the specified program in the editor memory and returns 0 on success
 // or 1 on error.
 static int editor_open(char const *filename) {
-    FILE *fp;
     E.dirty = false;
     free(E.filename);
     E.filename = strdup(filename);
-    fp = fopen(filename, "r");
+    FILE *fp = fopen(filename, "r");
     if (!fp) {
         if (errno != ENOENT) {
             perror("Opening file");
@@ -734,7 +731,7 @@ static void abuf_free(struct append_buffer *ab) {
 // This function writes the whole screen using VT100 escape characters
 // starting from the logical state of the editor in the global state 'E'.
 static void editor_refresh_screen(void) {
-    struct editor_row *r;
+    struct editor_row *r = NULL;
     struct append_buffer ab = { .buffer = NULL, .length = 0 };
     abuf_append(&ab, "\x1b[?25l", 6); // Hide cursor.
     abuf_append(&ab, "\x1b[H", 3); // Go home.
@@ -761,7 +758,7 @@ static void editor_refresh_screen(void) {
                 } else {
                     int color = editor_syntax_to_color(rendered_chars_syntax_highlight_type[i]);
                     if (color != current_color) {
-                        char *buffer;
+                        char *buffer = NULL;
                         int color_length = asprintf(&buffer, "\x1b[%dm", color);
                         if (color_length == -1) { perror("asprintf failed"); }
                         current_color = color;
@@ -780,7 +777,7 @@ static void editor_refresh_screen(void) {
     // Create a two rows status. First row:
     abuf_append(&ab, "\x1b[0K", 4);
     abuf_append(&ab, "\x1b[7m", 4);
-    char *status;
+    char *status = NULL;
     int len = asprintf(&status, "Editing: %.20s%s | Line: %d/%d (%d %%) | Column: %d", E.filename, E.dirty ? " (modified)" : "",
                        E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0
                        && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100, E.cursor_x + 1);
@@ -810,7 +807,7 @@ static void editor_refresh_screen(void) {
             cursor_x_including_expanded_tabs++;
         }
     }
-    char *buffer;
+    char *buffer = NULL;
     if (asprintf(&buffer, "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs) == -1) { perror("asprintf failed"); }
     abuf_append(&ab, buffer, strlen(buffer));
     free(buffer);
@@ -1016,7 +1013,7 @@ static void console_buffer_close(void) {
     if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) { perror("Write to stdout failed"); }
     if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) { perror("Write to stdout failed"); }
     struct append_buffer ab = { .buffer = NULL, .length = 0 };
-    char *buffer;
+    char *buffer = NULL;
     if (asprintf(&buffer, "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1) == -1) { perror("asprintf failed"); }
     abuf_append(&ab, buffer, strlen(buffer));
     free(buffer);
