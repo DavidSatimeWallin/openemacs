@@ -928,6 +928,7 @@ static void editor_search(void) {
 #define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
     if (saved_hl) { \
         memcpy(E.row[saved_hl_line].rendered_chars_syntax_highlight_type, saved_hl, E.row[saved_hl_line].rendered_size); \
+        free(saved_hl); \
         saved_hl = NULL; \
     } \
 } while (0)
@@ -951,6 +952,7 @@ static void editor_search(void) {
             SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
             // Redundant %s to suppress gcc's format-zero-length warning
             editor_set_status_message("%s", "");
+            free(saved_hl);
             return;
         } else if (key == ARROW_RIGHT || key == ARROW_DOWN || key == CTRL_S) {
             search_next = 1;
@@ -988,6 +990,7 @@ static void editor_search(void) {
                 last_match = current;
                 if (row->rendered_chars_syntax_highlight_type) {
                     saved_hl_line = current;
+                    free(saved_hl);
                     saved_hl = calloc(row->rendered_size, sizeof(char));
                     memcpy(saved_hl, row->rendered_chars_syntax_highlight_type, row->rendered_size);
                     memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, query_length);
