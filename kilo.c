@@ -743,11 +743,11 @@ static void editor_refresh_screen(void) {
         }
         r = &E.row[file_row];
         int len = r->rendered_size - E.column_offset;
-        int current_color = -1;
         if (len > 0) {
             if (len > E.screen_columns) { len = E.screen_columns; }
             char *c = r->rendered_chars + E.column_offset;
             char *rendered_chars_syntax_highlight_type = r->rendered_chars_syntax_highlight_type + E.column_offset;
+            int current_color = -1;
             for (int i = 0; i < len; i++) {
                 if (rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_TYPE_NORMAL) {
                     if (current_color != -1) {
