@@ -76,7 +76,7 @@ struct editor_config {
 // output in a single call, to avoid flickering effects.
 struct append_buffer {
     char *buffer;
-    int length;
+    size_t length;
 };
 
 static struct editor_config E;
@@ -372,9 +372,9 @@ static void editor_update_syntax(struct editor_row *row) {
         }
         // Handle keywords and lib calls
         if (prev_sep) {
-            int j;
+            size_t j;
             for (j = 0; keywords[j]; j++) {
-                unsigned int keyword_length = strlen(keywords[j]);
+                size_t keyword_length = strlen(keywords[j]);
                 bool keyword_type_2 = keywords[j][keyword_length - 1] == '|';
                 if (keyword_type_2) { keyword_length--; }
                 if (strlen(p) >= keyword_length && !memcmp(p, keywords[j], keyword_length) && is_separator(*(p + keyword_length))) {
@@ -434,7 +434,7 @@ static int editor_syntax_to_color(int hl) {
 }
 
 static void editor_select_syntax_highlight_based_on_filename_suffix(char const *filename) {
-    for (int j = 0; j < NUMBER_OF_SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
+    for (size_t j = 0; j < NUMBER_OF_SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
         struct editor_syntax *s = SYNTAX_HIGHLIGHT_DATABASE + j;
         int i = 0;
         while (s->file_match[i]) {
@@ -1037,7 +1037,7 @@ static void editor_process_keypress(void) {
     } else if (key == BACKSPACE || key == DEL_KEY || key == FORWARD_DELETE) {
         editor_delete_char();
     } else if (key == TAB) {
-        for (int i = 0; i < 4; i++) { editor_insert_char(' '); }
+        for (size_t i = 0; i < 4; i++) { editor_insert_char(' '); }
     } else if (key == PAGE_DOWN || key == PAGE_UP) {
         if (key == PAGE_UP && E.cursor_y != 0) {
             E.cursor_y = 0;
