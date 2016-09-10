@@ -207,7 +207,7 @@ static int editor_read_key(void) {
     int n_read;
     char key, sequence[3];
     while ((n_read = read(STDIN_FILENO, &key, 1)) == 0);
-    if (n_read == -1) { exit(1); }
+    if (n_read == -1) { exit(EXIT_FAILURE); }
     while (true) {
         if (key == ESC) { // Escape sequence
             // If this is just an ESC, we'll timeout here.
@@ -679,7 +679,7 @@ static int editor_open(char const *filename) {
     if (!fp) {
         if (errno != ENOENT) {
             perror("Opening file");
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         return 1;
     }
@@ -1060,7 +1060,7 @@ static void editor_process_keypress(void) {
             return;
         } else {
             console_buffer_close();
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
     } else if (key == CTRL_E) {
         editor_move_cursor_to_x_position(-1);
@@ -1104,7 +1104,7 @@ static void editor_process_keypress(void) {
 static void update_window_size(void) {
     if (get_window_size(&E.screen_rows, &E.screen_columns) == -1) {
         perror("Unable to query the screen for size (columns/rows)");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     E.screen_rows -= 2; // Get room for status bar.
 }
@@ -1146,7 +1146,7 @@ static void init_editor(void) {
 int main(int argc, char **argv) {
     if (argc != 2) {
         fprintf(stderr, "Usage: kilo <filename>\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     init_editor();
     editor_select_syntax_highlight_based_on_filename_suffix(argv[1]);
