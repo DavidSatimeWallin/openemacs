@@ -1,34 +1,10 @@
-Kilo
+openemacs
 ===
 
-Kilo is a small text editor in less than 1K lines of code (counted with cloc).
+openemacs is a tiny emacs clone without any library dependencies.
 
-A screencast is available here: https://asciinema.org/a/90r2i9bq8po03nazhqtsifksb
+The goal of the project is to implement the most important parts of emacs while staying under 1024 lines of code (as counted by `cloc`).
 
-Usage: kilo `<filename>`
+openemacs is based on Kilo - a minimal editor written by Salvatore Sanfilippo (antirez).
 
-Keys:
-
-    CTRL-S: Save
-    CTRL-Q: Quit
-    CTRL-F: Find string in file (ESC to exit search, arrows to navigate)
-
-Other keys:
-
-    CTRL-L: Redraw screen
-    CTRL-X: Does nothing (allows ^X^S, ^X^C for those with Emacs muscle memory out there)
-    CTRL-C: Quit (alternative keybinding to allow ^X^C)
-    CTRL-A: Go to the start of line
-    CTRL-E: Go to the end of line
-
-Kilo does not depend on any library (not even curses). It uses fairly standard
-VT100 (and similar terminals) escape sequences. The project is in alpha
-stage and was written in just a few hours taking code from my other two
-projects, load81 and linenoise.
-
-People are encouraged to use it as a starting point to write other editors
-or command line interfaces that are more advanced than the usual REPL
-style CLI.
-
-Kilo was written by Salvatore Sanfilippo aka antirez and is released
-under the BSD 2 clause license.
+The code is released under the 2-clause BSD license.

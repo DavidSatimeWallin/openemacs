@@ -1,7 +1,7 @@
-// kilo: A simple editor in less than 1 000 lines of code.
+// openemacs: A minimalistic emacs clone in less than 1 024 lines of code.
 //
-// The original version of kilo which this work is a fork of was released by
-// Salvatore "antirez" Sanfilippo under the BSD 2-clause license.
+// openemacs is released under 2-clause BSD license and is based on kilo,
+// a very small editor written by Salvatore "antirez" Sanfilippo.
 
 #define _DEFAULT_SOURCE // Linux: ftruncate, getline, kill, strdup
 #define _GNU_SOURCE     // Linux: strcasestr
@@ -1145,7 +1145,7 @@ static void init_editor(void) {
 
 int main(int argc, char **argv) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: kilo <filename>\n");
+        fprintf(stderr, "Usage: openemacs <filename>\n");
         exit(EXIT_FAILURE);
     }
     init_editor();
