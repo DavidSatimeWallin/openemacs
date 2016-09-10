@@ -92,7 +92,7 @@ enum KEY_ACTION {
 };
 
 // C/C++ ("class" being C++ only)
-char *C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".c", ".cpp", NULL };
+char *C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".c", ".cpp", ".h", ".hpp", NULL };
 char *C_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
     // C/C++ keywords
     "auto", "break", "case", "class", "const", "continue", "default", "do", "else", "enum", "extern", "for", "goto", "if", "register", "return", "sizeof", "static", "struct", "switch", "typedef", "union", "volatile", "while",
