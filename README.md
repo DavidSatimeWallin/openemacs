@@ -25,6 +25,12 @@ Keys:
     ctrl-x + ctrl-s = Save
     ctrl-x + ctrl-c = Exit
 
+Syntax highlighting support:
+
+    C (*.c, *.h)
+    C++ (*.cpp, *.hpp)
+    Python (*.py)
+
 openemacs is based on Kilo - a minimal editor written by Salvatore Sanfilippo (antirez).
 
 The code is released under the 2-clause BSD license.
