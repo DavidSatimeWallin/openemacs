@@ -20,15 +20,17 @@
 #include <time.h>       // time
 #include <unistd.h>     // close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write
 
-#define SYNTAX_HIGHLIGHT_TYPE_NORMAL 0
-#define SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT 1
-#define SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT 2
-#define SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1 3
-#define SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 4
-#define SYNTAX_HIGHLIGHT_TYPE_STRING 5
-#define SYNTAX_HIGHLIGHT_TYPE_NUMBER 6
-#define SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH 7
-#define SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE 8
+enum SYNTAX_HIGHLIGHT_MODE {
+    SYNTAX_HIGHLIGHT_MODE_NORMAL,
+    SYNTAX_HIGHLIGHT_MODE_SINGLE_LINE_COMMENT,
+    SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT,
+    SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_1,
+    SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_2,
+    SYNTAX_HIGHLIGHT_MODE_STRING,
+    SYNTAX_HIGHLIGHT_MODE_NUMBER,
+    SYNTAX_HIGHLIGHT_MODE_SEARCH_MATCH,
+    SYNTAX_HIGHLIGHT_MODE_TRAILING_WHITESPACE,
+};
 
 #define SEARCH_QUERY_MAX_LENGTH 256
 
@@ -82,7 +84,7 @@ struct append_buffer {
 static struct editor_config E;
 
 enum KEY_ACTION {
-    KEY_NULL = 0, CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6, BACKSPACE = 8, TAB = 9,
+    CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6, BACKSPACE = 8, TAB = 9,
     CTRL_K = 11, CTRL_L = 12, ENTER = 13, CTRL_N = 14, CTRL_P = 16, CTRL_Q = 17, CTRL_R = 18,
     CTRL_S = 19, CTRL_U = 21, CTRL_X = 24, CTRL_Y = 25, CTRL_Z = 26, ESC = 27, FORWARD_DELETE =  127,
     // The following are just soft codes, not really reported by the
@@ -276,18 +278,18 @@ static bool is_separator(int c) {
 // of the row but spawns to the next row.
 static bool editor_row_has_open_comment(struct editor_row const *row) {
     if (row->rendered_chars_syntax_highlight_type && row->rendered_size &&
-            row->rendered_chars_syntax_highlight_type[row->rendered_size - 1] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT &&
+            row->rendered_chars_syntax_highlight_type[row->rendered_size - 1] == SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT &&
             (row->rendered_size < 2 || (row->rendered_chars[row->rendered_size - 2] != '*' || row->rendered_chars[row->rendered_size - 1] != '/'))) { return true; }
     return false;
 }
 
 // Set every byte of row->rendered_chars_syntax_highlight_type (that corresponds to
 // every character in the line) to the right syntax highlight type
-// (SYNTAX_HIGHLIGHT_TYPE_* defines).
+// (SYNTAX_HIGHLIGHT_MODE_* defines).
 static void editor_update_syntax(struct editor_row *row) {
     row->rendered_chars_syntax_highlight_type = realloc(row->rendered_chars_syntax_highlight_type, row->rendered_size);
-    memset(row->rendered_chars_syntax_highlight_type, SYNTAX_HIGHLIGHT_TYPE_NORMAL, row->rendered_size);
-    if (!E.syntax_highlight_mode) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_TYPE_NORMAL.
+    memset(row->rendered_chars_syntax_highlight_type, SYNTAX_HIGHLIGHT_MODE_NORMAL, row->rendered_size);
+    if (!E.syntax_highlight_mode) { return; } // No syntax, everything is SYNTAX_HIGHLIGHT_MODE_NORMAL.
     char **keywords = E.syntax_highlight_mode->keywords;
     char *single_line_comment_start = E.syntax_highlight_mode->single_line_comment_start;
     char *multi_line_comment_start = E.syntax_highlight_mode->multi_line_comment_start;
@@ -311,14 +313,14 @@ static void editor_update_syntax(struct editor_row *row) {
         // Handle // comments.
         if (prev_sep && *p == single_line_comment_start[0] && *(p + 1) == single_line_comment_start[1]) {
             // From here to end is a comment
-            memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT, row->size - i);
+            memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_MODE_SINGLE_LINE_COMMENT, row->size - i);
             break;
         }
         // Handle multi line comments.
         if (in_comment) {
-            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT;
             if (*p == multi_line_comment_end[0] && *(p + 1) == multi_line_comment_end[1]) {
-                row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
+                row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT;
                 p += 2;
                 i += 2;
                 in_comment = false;
@@ -331,8 +333,8 @@ static void editor_update_syntax(struct editor_row *row) {
                 continue;
             }
         } else if (!in_string_char && *p == multi_line_comment_start[0] && *(p + 1) == multi_line_comment_start[1]) {
-            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
-            row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT;
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT;
+            row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT;
             p += 2;
             i += 2;
             in_comment = true;
@@ -341,9 +343,9 @@ static void editor_update_syntax(struct editor_row *row) {
         }
         // Handle "" and ''
         if (in_string_char) {
-            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_STRING;
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_MODE_STRING;
             if (*p == '\\') {
-                row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_TYPE_STRING;
+                row->rendered_chars_syntax_highlight_type[i + 1] = SYNTAX_HIGHLIGHT_MODE_STRING;
                 p += 2;
                 i += 2;
                 prev_sep = false;
@@ -355,16 +357,16 @@ static void editor_update_syntax(struct editor_row *row) {
             continue;
         } else if (*p == '"' || *p == '\'') {
             in_string_char = *p;
-            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_STRING;
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_MODE_STRING;
             p++;
             i++;
             prev_sep = false;
             continue;
         }
         // Handle numbers
-        if ((isdigit(*p) && (prev_sep || row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_TYPE_NUMBER)) ||
-                (*p == '.' && i > 0 && row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_TYPE_NUMBER)) {
-            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_NUMBER;
+        if ((isdigit(*p) && (prev_sep || row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_MODE_NUMBER)) ||
+                (*p == '.' && i > 0 && row->rendered_chars_syntax_highlight_type[i - 1] == SYNTAX_HIGHLIGHT_MODE_NUMBER)) {
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_MODE_NUMBER;
             p++;
             i++;
             prev_sep = false;
@@ -379,7 +381,7 @@ static void editor_update_syntax(struct editor_row *row) {
                 if (keyword_type_2) { keyword_length--; }
                 if (strlen(p) >= keyword_length && !memcmp(p, keywords[j], keyword_length) && is_separator(*(p + keyword_length))) {
                     // Keyword
-                    memset(row->rendered_chars_syntax_highlight_type + i, keyword_type_2 ? SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2 : SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1, keyword_length);
+                    memset(row->rendered_chars_syntax_highlight_type + i, keyword_type_2 ? SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_2 : SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_1, keyword_length);
                     p += keyword_length;
                     i += keyword_length;
                     break;
@@ -396,9 +398,9 @@ static void editor_update_syntax(struct editor_row *row) {
         i++;
     }
     for (int i = row->rendered_size - 1; i >= 0; i--) {
-        if (row->rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT) { break; }
+        if (row->rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT) { break; }
         if (isspace(row->rendered_chars[i]) || row->rendered_chars[i] == '\0' || row->rendered_chars[i] == '\n' || row->rendered_chars[i] == '\r') {
-            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE;
+            row->rendered_chars_syntax_highlight_type[i] = SYNTAX_HIGHLIGHT_MODE_TRAILING_WHITESPACE;
         } else {
             break;
         }
@@ -413,20 +415,20 @@ static void editor_update_syntax(struct editor_row *row) {
     row->has_open_comment = open_comment;
 }
 
-static int editor_syntax_to_color(int hl) {
-    if (hl == SYNTAX_HIGHLIGHT_TYPE_SINGLE_LINE_COMMENT || hl == SYNTAX_HIGHLIGHT_TYPE_MULTI_LINE_COMMENT) {
+static int editor_syntax_to_color(enum SYNTAX_HIGHLIGHT_MODE hl) {
+    if (hl == SYNTAX_HIGHLIGHT_MODE_SINGLE_LINE_COMMENT || hl == SYNTAX_HIGHLIGHT_MODE_MULTI_LINE_COMMENT) {
         return 31;    // normal red foreground
-    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_1) {
+    } else if (hl == SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_1) {
         return 35;    // normal magenta foreground
-    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_KEYWORD_2) {
+    } else if (hl == SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_2) {
         return 32;    // normal green foreground
-    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_STRING) {
+    } else if (hl == SYNTAX_HIGHLIGHT_MODE_STRING) {
         return 95;    // bright magenta foreground
-    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_NUMBER) {
+    } else if (hl == SYNTAX_HIGHLIGHT_MODE_NUMBER) {
         return 97;    // bright white foreground
-    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH) {
+    } else if (hl == SYNTAX_HIGHLIGHT_MODE_SEARCH_MATCH) {
         return 96;    // bright cyan foreground
-    } else if (hl == SYNTAX_HIGHLIGHT_TYPE_TRAILING_WHITESPACE) {
+    } else if (hl == SYNTAX_HIGHLIGHT_MODE_TRAILING_WHITESPACE) {
         return 41;    // normal red background
     } else {
         return 37;    // normal white foreground
@@ -749,7 +751,7 @@ static void editor_refresh_screen(void) {
             char *rendered_chars_syntax_highlight_type = r->rendered_chars_syntax_highlight_type + E.column_offset;
             int current_color = -1;
             for (int i = 0; i < len; i++) {
-                if (rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_TYPE_NORMAL) {
+                if (rendered_chars_syntax_highlight_type[i] == SYNTAX_HIGHLIGHT_MODE_NORMAL) {
                     if (current_color != -1) {
                         abuf_append(&ab, "\x1b[39m", 5);
                         current_color = -1;
@@ -925,7 +927,7 @@ static void editor_search(void) {
     int search_next = 0; // If 1 search next, if -1 search prev.
     int saved_hl_line = -1; // No saved HL
     char *saved_hl = NULL;
-#define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE do { \
+#define SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_MODE do { \
     if (saved_hl) { \
         memcpy(E.row[saved_hl_line].rendered_chars_syntax_highlight_type, saved_hl, E.row[saved_hl_line].rendered_size); \
         free(saved_hl); \
@@ -949,7 +951,7 @@ static void editor_search(void) {
                 E.column_offset = saved_column_offset;
                 E.row_offset = saved_row_offset;
             }
-            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
+            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_MODE;
             // Redundant %s to suppress gcc's format-zero-length warning
             editor_set_status_message("%s", "");
             free(saved_hl);
@@ -984,7 +986,7 @@ static void editor_search(void) {
             }
             search_next = 0;
             // Highlight
-            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_TYPE;
+            SEARCH_AND_RESTORE_SYNTAX_HIGHLIGHT_MODE;
             if (match) {
                 struct editor_row *row = &E.row[current];
                 last_match = current;
@@ -993,7 +995,7 @@ static void editor_search(void) {
                     free(saved_hl);
                     saved_hl = calloc(row->rendered_size, sizeof(char));
                     memcpy(saved_hl, row->rendered_chars_syntax_highlight_type, row->rendered_size);
-                    memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_TYPE_SEARCH_MATCH, query_length);
+                    memset(row->rendered_chars_syntax_highlight_type + match_offset, SYNTAX_HIGHLIGHT_MODE_SEARCH_MATCH, query_length);
                 }
                 E.cursor_y = 0;
                 E.cursor_x = match_offset;
