@@ -259,7 +259,7 @@ static int editor_read_key(void) {
 // Returns 0 on success, -1 on error.
 static int get_window_size(int *rows, int *columns) {
     struct winsize window_size;
-    if (ioctl(1, TIOCGWINSZ, &window_size) == -1 || window_size.ws_col == 0) {
+    if (ioctl(STDIN_FILENO, TIOCGWINSZ, &window_size) == -1 || window_size.ws_col == 0) {
         return -1;
     }
     *columns = window_size.ws_col;
