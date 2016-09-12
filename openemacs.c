@@ -202,7 +202,7 @@ fatal:
 // escape sequences.
 static int editor_read_key(void) {
     int n_read;
-    char key, sequence[3];
+    char key, sequence[3] = { 0 };
     while ((n_read = read(STDIN_FILENO, &key, 1)) == 0);
     if (n_read == -1) { exit(EXIT_FAILURE); }
     while (true) {
