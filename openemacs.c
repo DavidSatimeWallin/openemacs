@@ -7,8 +7,8 @@
 #define _GNU_SOURCE     // Linux: strcasestr
 
 #include <ctype.h>      // isdigit, isspace
-#include <errno.h>      // errno, ENOENT, ENOTTY
-#include <fcntl.h>      // open, O_CREAT, O_RDWR
+#include <errno.h>      // errno, ENOENT/ENOTTY
+#include <fcntl.h>      // open, O_CREAT/O_RDWR
 #include <signal.h>     // kill
 #include <stdarg.h>     // va_end, va_start
 #include <stdbool.h>    // bool, false, true
@@ -18,7 +18,7 @@
 #include <sys/ioctl.h>  // ioctl
 #include <termios.h>    // struct termios, tcgetattr, tcsetattr, TCSAFLUSH/BRKINT/ICRNL/INPCK/ISTRIP/IXON/OPOST/CS8/ECHO/ICANON/IEXTEN/ISIG/VMIN/VTIME
 #include <time.h>       // time
-#include <unistd.h>     // close, getpid, ftruncate, isatty, read, STDIN_FILENO, STDOUT_FILENO, write
+#include <unistd.h>     // close, getpid, ftruncate, isatty, read, STDIN_FILENO/STDOUT_FILENO, write
 
 enum SYNTAX_HIGHLIGHT_MODE {
     SYNTAX_HIGHLIGHT_MODE_NORMAL,
@@ -99,7 +99,7 @@ char *C_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
     // C types
     "bool|", "char|", "double|", "float|", "int|", "long|", "short|", "signed|", "unsigned|", "void|",
     // C preprocessor directives
-    "#define|", "#endif|", "#error|", "#ifdef|", "#ifndef|", "#if|", "#include|", "#undef|", NULL
+    "#define|", "#endif|", "#error|", "#if|", "#ifdef|", "#ifndef|", "#include|", "#undef|", NULL
 };
 
 // Python
