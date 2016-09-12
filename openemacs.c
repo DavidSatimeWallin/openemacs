@@ -45,7 +45,7 @@ struct editor_syntax {
 // This structure represents a single line of the file we are editing.
 struct editor_row {
     int index_in_file;            // Row index in the file, zero-based.
-    int size;                     // Size of the row, excluding the null term.
+    int size;                     // Size of the row, excluding the NULL term.
     int rendered_size;            // Size of the rendered row.
     char *chars;                  // Row content.
     char *rendered_chars;         // Row content "rendered" for screen (for TABs).
@@ -540,14 +540,14 @@ static void editor_row_insert_char(struct editor_row *row, int at, int c) {
         // Pad the string with spaces if the insert location is outside the
         // current length by more than a single character.
         int pad_length = at - row->size;
-        // In the next line +2 means: new char and null term.
+        // In the next line +2 means: new char and NULL term.
         row->chars = realloc(row->chars, row->size + pad_length + 2);
         memset(row->chars + row->size, ' ', pad_length);
         row->chars[row->size + pad_length + 1] = '\0';
         row->size += pad_length + 1;
     } else {
         // If we are in the middle of the string just make space for 1 new
-        // char plus the (already existing) null term.
+        // char plus the (already existing) NULL term.
         row->chars = realloc(row->chars, row->size + 2);
         memmove(row->chars + at + 1, row->chars + at, row->size - at + 1);
         row->size++;
