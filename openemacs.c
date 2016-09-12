@@ -174,12 +174,11 @@ static void console_buffer_open(void) {
 }
 
 static int enable_raw_mode(void) {
-    struct termios raw;
     if (E.raw_mode) { return 0; }
     if (!isatty(STDIN_FILENO)) { goto fatal; }
     atexit(editor_at_exit);
     if (tcgetattr(STDIN_FILENO, &E.original_termios) == -1) { goto fatal; }
-    raw = E.original_termios; // Modify the original mode
+    struct termios raw = E.original_termios; // Modify the original mode
     // input modes: no break, no CR to NL, no parity check, no strip char,
     // no start/stop output control.
     raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
