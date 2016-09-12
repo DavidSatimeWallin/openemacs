@@ -141,18 +141,18 @@ static void editor_free_row(struct editor_row *row) {
 
 // Cleanups:
 // - Disable raw mode.
-// - Clean up allocations to make valgrind report status:
-//   "All heap blocks were freed -- no leaks are possible"
-
-// Allocations used:
-// - calloc
-// - realloc
-// - strdup
-// - asprintf (implicit malloc)
-// - vasprintf (implicit realloc)
 
 static void editor_at_exit(void) {
     disable_raw_mode();
+    // Clean up allocations. Make sure valgrind reports:
+    // "All heap blocks were freed -- no leaks are possible"
+    //
+    // Allocations used:
+    // - asprintf (implicit malloc)
+    // - calloc
+    // - realloc
+    // - strdup
+    // - vasprintf (implicit realloc)
     for (int i = 0; i < E.number_of_rows; i++) {
         editor_free_row(&E.row[i]);
     }
