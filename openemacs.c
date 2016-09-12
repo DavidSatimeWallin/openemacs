@@ -32,8 +32,6 @@ enum SYNTAX_HIGHLIGHT_MODE {
     SYNTAX_HIGHLIGHT_MODE_TRAILING_WHITESPACE,
 };
 
-#define SEARCH_QUERY_MAX_LENGTH 256
-
 struct editor_syntax {
     char **file_match;
     char **keywords;
@@ -117,8 +115,6 @@ struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
     { .file_match = C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = C_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "/*", .multi_line_comment_end = "*/" },
     { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" }
 };
-
-#define NUMBER_OF_SYNTAX_HIGHLIGHT_DATABASE_ENTRIES (int)(sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]))
 
 __attribute__((format(printf, 1, 2)))
 static void editor_set_status_message(char const *format, ...) {
@@ -434,7 +430,7 @@ static int editor_syntax_to_color(enum SYNTAX_HIGHLIGHT_MODE hl) {
 }
 
 static void editor_select_syntax_highlight_based_on_filename_suffix(char const *filename) {
-    for (size_t j = 0; j < NUMBER_OF_SYNTAX_HIGHLIGHT_DATABASE_ENTRIES; j++) {
+    for (size_t j = 0; j < sizeof(SYNTAX_HIGHLIGHT_DATABASE) / sizeof(SYNTAX_HIGHLIGHT_DATABASE[0]); j++) {
         struct editor_syntax *s = SYNTAX_HIGHLIGHT_DATABASE + j;
         int i = 0;
         while (s->file_match[i]) {
@@ -918,6 +914,7 @@ static void editor_recenter_vertically(void) {
     }
 }
 
+#define SEARCH_QUERY_MAX_LENGTH 256
 static void editor_search(void) {
     char query[SEARCH_QUERY_MAX_LENGTH + 1] = { 0 };
     int query_length = 0;
