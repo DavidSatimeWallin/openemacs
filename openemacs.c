@@ -212,8 +212,7 @@ static int editor_read_key(void) {
     while (true) {
         if (key == ESC) { // Escape sequence
             // If this is just an ESC, we'll timeout here.
-            if (read(STDIN_FILENO, sequence, 1) == 0) { return ESC; }
-            if (read(STDIN_FILENO, sequence + 1, 1) == 0) { return ESC; }
+            if (read(STDIN_FILENO, sequence, 1) == 0 || read(STDIN_FILENO, sequence + 1, 1) == 0) { return ESC; }
             // ESC [ sequences.
             if (sequence[0] == '[') {
                 if (sequence[1] >= '0' && sequence[1] <= '9') {
