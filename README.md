@@ -14,7 +14,7 @@ Keys:
     ctrl-a = Go to start of line
     ctrl-e = Go to end of line
     ctrl-k = Cut/kill line
-    ctrl-l = Scroll current line to center and refresh
+    ctrl-l = Re-center screen vertically and refresh
     ctrl-n = Go to next line (alternative: arrow down)
     ctrl-p = Go to previous line (alternative: arrow up)
     ctrl-q = Quoted insert - insert character as-is

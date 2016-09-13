@@ -40,7 +40,7 @@ struct editor_syntax {
     char multi_line_comment_end[3];
 };
 
-// This structure represents a single line of the file we are editing.
+// A single line of the file we are editing.
 struct editor_row {
     int index_in_file;            // Row index in the file, zero-based.
     int size;                     // Size of the row, excluding the NULL term.
@@ -138,9 +138,6 @@ static void editor_free_row(struct editor_row *row) {
     free(row->rendered_chars);
     free(row->rendered_chars_syntax_highlight_type);
 }
-
-// Cleanups:
-// - Disable raw mode.
 
 static void editor_at_exit(void) {
     disable_raw_mode();
@@ -251,8 +248,6 @@ static int editor_read_key(void) {
     }
 }
 
-// Try to get the number of columns in the current terminal.
-// Returns 0 on success, -1 on error.
 static int get_window_size(int *rows, int *columns) {
     struct winsize window_size;
     if (ioctl(STDIN_FILENO, TIOCGWINSZ, &window_size) == -1 || window_size.ws_col == 0) {
@@ -692,7 +687,7 @@ static int editor_open(char const *filename) {
     return 0;
 }
 
-// Save the current file on disk. Return 0 on success, 1 on error.
+// Save the current file to disk. Return 0 on success, 1 on error.
 static int editor_save(void) {
     int len;
     char *buf = editor_rows_to_string(&len);
@@ -1070,7 +1065,6 @@ static void editor_process_keypress(void) {
     } else if (key == CTRL_L) {
         editor_recenter_vertically();
     } else if (key == CTRL_X || key == ESC) {
-        // No-op: ^X ignored to allow for ^X^S et al. ESC used only in search mode.
         previous_key = key;
         return;
     } else if (key == CTRL_S || (previous_key == CTRL_X && (key == 's' || key == 'S'))) {
