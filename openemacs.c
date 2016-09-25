@@ -51,7 +51,7 @@ struct editor_row {
     bool has_open_comment;        // Row had open comment at end in last syntax highlight check.
 };
 
-struct editor_config {
+struct editor_state {
     int cursor_x, cursor_y;       // Cursor x and y position in characters
     int desired_cursor_x;         // Cursor x which user wants if sufficient characters on the line
     int row_offset;               // Offset of row displayed.
@@ -79,7 +79,7 @@ struct append_buffer {
     size_t length;
 };
 
-static struct editor_config E;
+static struct editor_state E;
 
 enum KEY_ACTION {
     CTRL_A = 1, CTRL_C = 3, CTRL_D = 4, CTRL_E = 5, CTRL_F = 6, BACKSPACE = 8, TAB = 9,
