@@ -126,7 +126,7 @@ static void editor_set_status_message(char const *format, ...) {
     E.status_message_last_update = time(NULL);
 }
 
-static void disable_raw_mode(void) {
+static void editor_disable_raw_mode(void) {
     if (E.raw_mode) {
         tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.original_termios);
         E.raw_mode = false;
@@ -140,7 +140,7 @@ static void editor_free_row(struct editor_row *row) {
 }
 
 static void editor_at_exit(void) {
-    disable_raw_mode();
+    editor_disable_raw_mode();
     // Clean up allocations. Make sure valgrind reports:
     // "All heap blocks were freed -- no leaks are possible"
     //
@@ -166,7 +166,7 @@ static void console_buffer_open(void) {
     if (write(STDOUT_FILENO, "\x1b[?47h", 6) == -1) { perror("Write to stdout failed"); }
 }
 
-static int enable_raw_mode(void) {
+static int editor_enable_raw_mode(void) {
     if (E.raw_mode) { return 0; }
     if (!isatty(STDIN_FILENO)) { goto fatal; }
     atexit(editor_at_exit);
@@ -1092,7 +1092,7 @@ static void editor_process_keypress(void) {
     previous_key = key;
 }
 
-static void update_window_size(void) {
+static void editor_update_window_size(void) {
     if (get_window_size(&E.screen_rows, &E.screen_columns) == -1) {
         perror("Unable to query the screen for size (columns/rows)");
         exit(EXIT_FAILURE);
@@ -1100,8 +1100,8 @@ static void update_window_size(void) {
     E.screen_rows -= 2; // Get room for status bar.
 }
 
-static void handle_sigwinch(int unused __attribute__((unused))) {
-    update_window_size();
+static void editor_handle_sigwinch(int unused __attribute__((unused))) {
+    editor_update_window_size();
     if (E.cursor_y > E.screen_rows) {
         E.cursor_y = E.screen_rows - 1;
     }
@@ -1111,14 +1111,14 @@ static void handle_sigwinch(int unused __attribute__((unused))) {
     editor_refresh_screen();
 }
 
-static void handle_sigcont(int unused __attribute__((unused))) {
-    disable_raw_mode();
+static void editor_handle_sigcont(int unused __attribute__((unused))) {
+    editor_disable_raw_mode();
     console_buffer_open();
-    enable_raw_mode();
+    editor_enable_raw_mode();
     editor_refresh_screen();
 }
 
-static void init_editor(void) {
+static void editor_init(void) {
     E.status_message = NULL;
     E.cursor_x = 0;
     E.cursor_y = 0;
@@ -1129,9 +1129,9 @@ static void init_editor(void) {
     E.dirty = false;
     E.filename = NULL;
     E.syntax_highlight_mode = NULL;
-    update_window_size();
-    signal(SIGWINCH, handle_sigwinch);
-    signal(SIGCONT, handle_sigcont);
+    editor_update_window_size();
+    signal(SIGWINCH, editor_handle_sigwinch);
+    signal(SIGCONT, editor_handle_sigcont);
 }
 
 int main(int argc, char **argv) {
@@ -1139,10 +1139,10 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Usage: openemacs <filename>\n");
         exit(EXIT_FAILURE);
     }
-    init_editor();
+    editor_init();
     editor_select_syntax_highlight_based_on_filename_suffix(argv[1]);
     editor_open(argv[1]);
-    enable_raw_mode();
+    editor_enable_raw_mode();
     editor_set_status_message("Commands: ctrl-s = Search | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
     while (true) {
         editor_refresh_screen();
