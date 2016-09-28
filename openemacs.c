@@ -1084,7 +1084,7 @@ static void editor_process_keypress(void) {
         }
     } else if (key == CTRL_Z) {
         console_buffer_close();
-        kill(getpid(), SIGTSTP);
+        kill(0, SIGTSTP);
     } else {
         if (key >= 0 && key <= 31) {
             editor_set_status_message("Unrecognized command: ASCII %d", key);
