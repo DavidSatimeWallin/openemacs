@@ -135,8 +135,11 @@ static void editor_disable_raw_mode(void) {
 
 static void editor_free_row(struct editor_row *row) {
     free(row->chars);
+    row->chars = NULL;
     free(row->rendered_chars);
+    row->rendered_chars = NULL;
     free(row->rendered_chars_syntax_highlight_type);
+    row->rendered_chars_syntax_highlight_type = NULL;
 }
 
 static void editor_at_exit(void) {
@@ -717,6 +720,7 @@ static void abuf_append(struct append_buffer *ab, const char *s, int len) {
 
 static void abuf_free(struct append_buffer *ab) {
     free(ab->buffer);
+    ab->buffer = NULL;
 }
 
 // This function writes the whole screen using VT100 escape characters
