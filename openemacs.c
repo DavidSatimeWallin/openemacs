@@ -121,7 +121,7 @@ static void editor_set_status_message(char const *format, ...) {
     va_list ap;
     va_start(ap, format);
     free(E.status_message);
-    if (vasprintf(&E.status_message, format, ap) == -1) { perror("vasprintf failed."); }
+    if (vasprintf(&E.status_message, format, ap) == -1) { perror("vasprintf failed."); exit(EXIT_FAILURE); }
     va_end(ap);
     E.status_message_last_update = time(NULL);
 }
@@ -166,7 +166,7 @@ static void editor_at_exit(void) {
 static void console_buffer_open(void) {
     // Switch to another buffer in order to be able to restore state at exit
     // by calling console_buffer_close(void).
-    if (write(STDOUT_FILENO, "\x1b[?47h", 6) == -1) { perror("Write to stdout failed"); }
+    if (write(STDOUT_FILENO, "\x1b[?47h", 6) == -1) { perror("Write to stdout failed"); exit(EXIT_FAILURE); }
 }
 
 static int editor_enable_raw_mode(void) {
@@ -755,7 +755,7 @@ static void editor_refresh_screen(void) {
                     if (color != current_color) {
                         char *buffer = NULL;
                         int color_length = asprintf(&buffer, "\x1b[%dm", color);
-                        if (color_length == -1) { perror("asprintf failed"); }
+                        if (color_length == -1) { perror("asprintf failed"); exit(EXIT_FAILURE); }
                         current_color = color;
                         abuf_append(&ab, buffer, color_length);
                         free(buffer);
@@ -776,7 +776,7 @@ static void editor_refresh_screen(void) {
     int len = asprintf(&status, "Editing: %.20s%s | Line: %d/%d (%d %%) | Column: %d", E.filename, E.dirty ? " (modified)" : "",
                        E.row_offset + E.cursor_y + 1 <= E.number_of_rows ? E.row_offset + E.cursor_y + 1 : E.number_of_rows, E.number_of_rows, E.number_of_rows > 0
                        && E.row_offset + E.cursor_y + 1 < E.number_of_rows ? 100 * (E.row_offset + E.cursor_y + 1) / E.number_of_rows : 100, E.cursor_x + 1);
-    if (len == -1) { perror("asprintf failed"); }
+    if (len == -1) { perror("asprintf failed"); exit(EXIT_FAILURE); }
     if (len > E.screen_columns) { len = E.screen_columns; }
     abuf_append(&ab, status, len);
     free(status);
@@ -803,11 +803,11 @@ static void editor_refresh_screen(void) {
         }
     }
     char *buffer = NULL;
-    if (asprintf(&buffer, "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs) == -1) { perror("asprintf failed"); }
+    if (asprintf(&buffer, "\x1b[%d;%dH", E.cursor_y + 1, cursor_x_including_expanded_tabs) == -1) { perror("asprintf failed"); exit(EXIT_FAILURE); }
     abuf_append(&ab, buffer, strlen(buffer));
     free(buffer);
     abuf_append(&ab, "\x1b[?25h", 6); // Show cursor.
-    if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); }
+    if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); exit(EXIT_FAILURE); }
     abuf_free(&ab);
 }
 
@@ -1010,14 +1010,14 @@ static void editor_search(void) {
 
 static void console_buffer_close(void) {
     // Restore console to the state before program started
-    if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) { perror("Write to stdout failed"); }
-    if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) { perror("Write to stdout failed"); }
+    if (write(STDOUT_FILENO, "\x1b[?9l", 5) == -1) { perror("Write to stdout failed"); exit(EXIT_FAILURE); }
+    if (write(STDOUT_FILENO, "\x1b[?47l", 6) == -1) { perror("Write to stdout failed"); exit(EXIT_FAILURE); }
     struct append_buffer ab = { .buffer = NULL, .length = 0 };
     char *buffer = NULL;
-    if (asprintf(&buffer, "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1) == -1) { perror("asprintf failed"); }
+    if (asprintf(&buffer, "\x1b[%d;%dH\r\n", E.screen_rows + 1, 1) == -1) { perror("asprintf failed"); exit(EXIT_FAILURE); }
     abuf_append(&ab, buffer, strlen(buffer));
     free(buffer);
-    if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); }
+    if (write(STDOUT_FILENO, ab.buffer, ab.length) == -1) { perror("Write to stdout failed"); exit(EXIT_FAILURE); }
     abuf_free(&ab);
 }
 
