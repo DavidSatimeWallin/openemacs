@@ -666,6 +666,7 @@ static void editor_delete_char(void) {
 // Load the specified program in the editor memory and returns 0 on success
 // or 1 on error.
 static int editor_open(char const *filename) {
+    editor_select_syntax_highlight_based_on_filename_suffix(filename);
     E.dirty = false;
     free(E.filename);
     E.filename = strdup(filename);
@@ -1137,6 +1138,8 @@ static void editor_init(void) {
     signal(SIGWINCH, editor_handle_sigwinch);
     signal(SIGCONT, editor_handle_sigcont);
     atexit(editor_at_exit);
+    editor_enable_raw_mode();
+    editor_set_status_message("Commands: ctrl-s = Search | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
 }
 
 int main(int argc, char **argv) {
@@ -1145,10 +1148,7 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
     editor_init();
-    editor_select_syntax_highlight_based_on_filename_suffix(argv[1]);
     editor_open(argv[1]);
-    editor_enable_raw_mode();
-    editor_set_status_message("Commands: ctrl-s = Search | ctrl-x + ctrl-s = Save | ctrl-x + ctrl-c = Quit");
     while (true) {
         editor_refresh_screen();
         editor_process_keypress();
