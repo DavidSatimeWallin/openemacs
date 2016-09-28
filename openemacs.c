@@ -370,7 +370,8 @@ static void editor_update_syntax(struct editor_row *row) {
                 if (keyword_type_2) { keyword_length--; }
                 if (strlen(p) >= keyword_length && !memcmp(p, keywords[j], keyword_length) && is_separator(*(p + keyword_length))) {
                     // Keyword
-                    memset(row->rendered_chars_syntax_highlight_type + i, keyword_type_2 ? SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_2 : SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_1, keyword_length);
+                    memset(row->rendered_chars_syntax_highlight_type + i, keyword_type_2 ? SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_2 : SYNTAX_HIGHLIGHT_MODE_KEYWORD_GROUP_1,
+                           keyword_length);
                     p += keyword_length;
                     i += keyword_length;
                     break;
