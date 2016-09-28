@@ -169,7 +169,6 @@ static void console_buffer_open(void) {
 static int editor_enable_raw_mode(void) {
     if (E.raw_mode) { return 0; }
     if (!isatty(STDIN_FILENO)) { goto fatal; }
-    atexit(editor_at_exit);
     if (tcgetattr(STDIN_FILENO, &E.original_termios) == -1) { goto fatal; }
     struct termios raw = E.original_termios; // Modify the original mode
     // input modes: no break, no CR to NL, no parity check, no strip char,
@@ -1133,6 +1132,7 @@ static void editor_init(void) {
     editor_update_window_size();
     signal(SIGWINCH, editor_handle_sigwinch);
     signal(SIGCONT, editor_handle_sigcont);
+    atexit(editor_at_exit);
 }
 
 int main(int argc, char **argv) {
