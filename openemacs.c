@@ -65,7 +65,9 @@ struct editor_state {
     char *filename;               // Currently open filename
     char *status_message;
     time_t status_message_last_update;
-    char *cut_buffer;
+    int number_of_cut_buffer_lines;
+    char **cut_buffer_lines;
+    bool has_open_cut_buffer;
     struct editor_syntax *syntax_highlight_mode; // Current syntax highlight, or NULL.
     struct termios original_termios;  // In order to restore at exit.
 };
@@ -142,6 +144,15 @@ static void editor_free_row(struct editor_row *row) {
     row->rendered_chars_syntax_highlight_type = NULL;
 }
 
+static void editor_free_cut_buffer(void) {
+    for (int i = 0; i < E.number_of_cut_buffer_lines; i++) {
+        free(E.cut_buffer_lines[i]);
+    }
+    free(E.cut_buffer_lines);
+    E.cut_buffer_lines = NULL;
+    E.number_of_cut_buffer_lines = 0;
+}
+
 static void editor_at_exit(void) {
     editor_disable_raw_mode();
     // Clean up allocations. Make sure valgrind reports:
@@ -156,7 +167,7 @@ static void editor_at_exit(void) {
     for (int i = 0; i < E.number_of_rows; i++) {
         editor_free_row(&E.row[i]);
     }
-    free(E.cut_buffer);
+    editor_free_cut_buffer();
     free(E.filename);
     free(E.row);
     free(E.status_message);
@@ -1036,6 +1047,7 @@ static void editor_process_keypress(void) {
     } else if (key == TAB) {
         for (size_t i = 0; i < 4; i++) { editor_insert_char(' '); }
     } else if (key == PAGE_DOWN || key == PAGE_UP) {
+        E.has_open_cut_buffer = false;
         if (key == PAGE_UP && E.cursor_y != 0) {
             E.cursor_y = 0;
         } else if (key == PAGE_DOWN && E.cursor_y != E.screen_rows - 1) {
@@ -1046,6 +1058,7 @@ static void editor_process_keypress(void) {
             editor_move_cursor_by_arrow_key_input(key == PAGE_UP ? ARROW_UP : ARROW_DOWN);
         }
     } else if (key == ARROW_DOWN || key == ARROW_LEFT || key == ARROW_RIGHT || key == ARROW_UP || key == CTRL_N || key == CTRL_P) {
+        E.has_open_cut_buffer = false;
         editor_move_cursor_by_arrow_key_input(key);
     } else if (key == CTRL_A) {
         editor_move_cursor_to_x_position(0);
@@ -1064,8 +1077,13 @@ static void editor_process_keypress(void) {
     } else if (key == CTRL_K) {
         if (E.row_offset + E.cursor_y >= E.number_of_rows) { return; }
         struct editor_row *row = E.row + E.row_offset + E.cursor_y;
-        free(E.cut_buffer);
-        E.cut_buffer = strdup(row->chars);
+        if (!E.has_open_cut_buffer) {
+            editor_free_cut_buffer();
+        }
+        E.has_open_cut_buffer = true;
+        E.cut_buffer_lines = realloc(E.cut_buffer_lines, (E.number_of_cut_buffer_lines + 1) * sizeof(char *));
+        E.cut_buffer_lines[E.number_of_cut_buffer_lines] = strdup(row->chars);
+        E.number_of_cut_buffer_lines += 1;
         editor_delete_row(E.row_offset + E.cursor_y);
     } else if (key == CTRL_L) {
         editor_recenter_vertically();
@@ -1079,8 +1097,8 @@ static void editor_process_keypress(void) {
             editor_search();
         }
     } else if (key == CTRL_Y) {
-        if (E.cut_buffer) {
-            editor_insert_row(E.row_offset + E.cursor_y, E.cut_buffer, strlen(E.cut_buffer));
+        for (int i = 0; i < E.number_of_cut_buffer_lines; i++) {
+            editor_insert_row(E.row_offset + E.cursor_y, E.cut_buffer_lines[i], strlen(E.cut_buffer_lines[i]));
             editor_move_cursor_by_arrow_key_input(ARROW_DOWN);
         }
     } else if (key == CTRL_Z) {
@@ -1134,6 +1152,9 @@ static void editor_init(void) {
     E.dirty = false;
     E.filename = NULL;
     E.syntax_highlight_mode = NULL;
+    E.number_of_cut_buffer_lines = 0;
+    E.cut_buffer_lines = NULL;
+    E.has_open_cut_buffer = false;
     editor_update_window_size();
     signal(SIGWINCH, editor_handle_sigwinch);
     signal(SIGCONT, editor_handle_sigcont);
