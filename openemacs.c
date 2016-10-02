@@ -1082,7 +1082,7 @@ static void editor_process_keypress(void) {
             editor_free_cut_buffer();
         }
         E.has_open_cut_buffer = true;
-        E.cut_buffer_lines = realloc(E.cut_buffer_lines, (E.number_of_cut_buffer_lines + 1) * sizeof(char *));
+        E.cut_buffer_lines = realloc(E.cut_buffer_lines, sizeof(char*) * (E.number_of_cut_buffer_lines + 1));
         E.cut_buffer_lines[E.number_of_cut_buffer_lines] = strdup(row->chars);
         E.number_of_cut_buffer_lines += 1;
         editor_delete_row(E.row_offset + E.cursor_y);
