@@ -828,6 +828,7 @@ static void editor_move_cursor_to_x_position(int x) {
     int file_row = E.row_offset + E.cursor_y;
     struct editor_row *row = (file_row >= E.number_of_rows) ? NULL : &E.row[file_row];
     if (row) { E.cursor_x = x == -1 ? row->size : x; }
+    E.desired_cursor_x = x;
 }
 
 static void editor_move_cursor_by_arrow_key_input(int key) {
