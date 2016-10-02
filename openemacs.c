@@ -1143,19 +1143,19 @@ static void editor_handle_sigcont(int unused __attribute__((unused))) {
 }
 
 static void editor_init(void) {
-    E.status_message = NULL;
+    E.column_offset = 0;
     E.cursor_x = 0;
     E.cursor_y = 0;
-    E.row_offset = 0;
-    E.column_offset = 0;
-    E.number_of_rows = 0;
-    E.row = NULL;
+    E.cut_buffer_lines = NULL;
     E.dirty = false;
     E.filename = NULL;
-    E.syntax_highlight_mode = NULL;
-    E.number_of_cut_buffer_lines = 0;
-    E.cut_buffer_lines = NULL;
     E.has_open_cut_buffer = false;
+    E.number_of_cut_buffer_lines = 0;
+    E.number_of_rows = 0;
+    E.row = NULL;
+    E.row_offset = 0;
+    E.status_message = NULL;
+    E.syntax_highlight_mode = NULL;
     editor_update_window_size();
     signal(SIGWINCH, editor_handle_sigwinch);
     signal(SIGCONT, editor_handle_sigcont);
