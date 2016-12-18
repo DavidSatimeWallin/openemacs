@@ -107,10 +107,10 @@ char *C_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
 // Go
 char *GO_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".go", NULL };
 char *GO_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
-       // Go keywords
-	"if", "for", "range", "while", "switch", "case", "else", "func", "package", "import", "type", "struct", "import", "const", "var", 
-       // Go types
-       "nil", "true", "false", "error", "err", "int", "int32", "int64", "uint", "uint32", "uint64", "string", NULL
+    // Go keywords
+    "if", "for", "range", "while", "defer", "switch", "case", "else", "func", "package", "import", "type", "struct", "import", "const", "var",
+    // Go types
+    "nil|", "true|", "false|", "error|", "err|", "int|", "int32|", "int64|", "uint|", "uint32|", "uint64|", "string|", "bool|", NULL
 };
 // Python
 char *PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".py", NULL };
