@@ -104,6 +104,14 @@ char *C_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
     "#define|", "#endif|", "#error|", "#if|", "#ifdef|", "#ifndef|", "#include|", "#undef|", NULL
 };
 
+// Go
+char *GO_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".go", NULL };
+char *GO_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
+       // Go keywords
+	"if", "for", "range", "while", "switch", "case", "else", "func", "package", "import", "type", "struct", "import", "const", "var", 
+       // Go types
+       "nil", "true", "false", "error", "err", "int", "int32", "int64", "uint", "uint32", "uint64", "string", NULL
+};
 // Python
 char *PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".py", NULL };
 char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
@@ -115,7 +123,8 @@ char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
 
 struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
     { .file_match = C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = C_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "/*", .multi_line_comment_end = "*/" },
-    { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" }
+    { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" },
+    { .file_match = GO_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = GO_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "", .multi_line_comment_end = "" }
 };
 
 __attribute__((format(printf, 1, 2)))
