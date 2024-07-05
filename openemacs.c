@@ -112,6 +112,17 @@ char *GO_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
     // Go types
     "nil|", "true|", "false|", "error|", "err|", "int|", "int32|", "int64|", "uint|", "uint32|", "uint64|", "string|", "bool|", NULL
 };
+
+// V
+char *V_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".v", NULL };
+char *V_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
+	// V keywords
+	"if", "for", "match", "while", "switch", "defer", "else", "fn", "module", "import", "type", "const", "struct", "assert", "in", "chan", "goto",
+	// V types
+	"nil|", "true|", "false|", "error|", "err|", "int|", "i32|", "i64|", "u32|", "u64|", "string|", "array|", "i8|", "u8|", "i16|", "u16|", "i128|", "u128|", "rune|", "isize|", "usize|", "voidptr|", "any|", "f32|", "f64|", "map|", "shared|", "thread|", NULL
+};
+// END V
+
 // Python
 char *PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".py", NULL };
 char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
@@ -124,7 +135,8 @@ char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
 struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
     { .file_match = C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = C_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "/*", .multi_line_comment_end = "*/" },
     { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" },
-    { .file_match = GO_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = GO_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "", .multi_line_comment_end = "" }
+    { .file_match = GO_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = GO_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "", .multi_line_comment_end = "" },
+    { .file_match = V_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = V_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "", .multi_line_comment_end = "" }
 };
 
 __attribute__((format(printf, 1, 2)))
