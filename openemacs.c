@@ -116,10 +116,10 @@ char *GO_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
 // V
 char *V_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS[] = { ".v", NULL };
 char *V_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
-	// V keywords
-	"if", "for", "match", "while", "switch", "defer", "else", "fn", "module", "import", "type", "const", "struct", "assert", "in", "chan", "goto",
-	// V types
-	"nil|", "true|", "false|", "error|", "err|", "int|", "i32|", "i64|", "u32|", "u64|", "string|", "array|", "i8|", "u8|", "i16|", "u16|", "i128|", "u128|", "rune|", "isize|", "usize|", "voidptr|", "any|", "f32|", "f64|", "map|", "shared|", "thread|", NULL
+    // V keywords
+    "if", "for", "match", "while", "switch", "defer", "else", "fn", "module", "import", "type", "const", "struct", "assert", "in", "chan", "goto",
+    // V types
+    "nil|", "true|", "false|", "error|", "err|", "int|", "i32|", "i64|", "u32|", "u64|", "string|", "array|", "i8|", "u8|", "i16|", "u16|", "i128|", "u128|", "rune|", "isize|", "usize|", "voidptr|", "any|", "f32|", "f64|", "map|", "shared|", "thread|", NULL
 };
 // END V
 
@@ -1103,7 +1103,7 @@ static void editor_process_keypress(void) {
             editor_free_cut_buffer();
         }
         E.has_open_cut_buffer = true;
-        E.cut_buffer_lines = realloc(E.cut_buffer_lines, sizeof(char*) * (E.number_of_cut_buffer_lines + 1));
+        E.cut_buffer_lines = realloc(E.cut_buffer_lines, sizeof(char *) * (E.number_of_cut_buffer_lines + 1));
         E.cut_buffer_lines[E.number_of_cut_buffer_lines] = strdup(row->chars);
         E.number_of_cut_buffer_lines += 1;
         editor_delete_row(E.row_offset + E.cursor_y);
