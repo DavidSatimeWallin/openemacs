@@ -134,7 +134,7 @@ char *PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS[] = {
 
 struct editor_syntax SYNTAX_HIGHLIGHT_DATABASE[] = {
     { .file_match = C_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = C_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "/*", .multi_line_comment_end = "*/" },
-    { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "# ", .multi_line_comment_start = "", .multi_line_comment_end = "" },
+    { .file_match = PYTHON_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = PYTHON_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "#\0", .multi_line_comment_start = "", .multi_line_comment_end = "" },
     { .file_match = GO_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = GO_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "", .multi_line_comment_end = "" },
     { .file_match = V_SYNTAX_HIGHLIGHT_FILE_EXTENSIONS, .keywords = V_SYNTAX_HIGHLIGHT_KEYWORDS, .single_line_comment_start = "//", .multi_line_comment_start = "", .multi_line_comment_end = "" }
 };
@@ -333,8 +333,8 @@ static void editor_update_syntax(struct editor_row *row) {
         in_comment = true;
     }
     while (*p) {
-        // Handle // comments.
-        if (prev_sep && *p == single_line_comment_start[0] && *(p + 1) == single_line_comment_start[1]) {
+        // Handle // comments. Either two chars, or one with null for second pattern
+        if (prev_sep && *p == single_line_comment_start[0] && (single_line_comment_start[1]==0 || *(p + 1) == single_line_comment_start[1])) {
             // From here to end is a comment
             memset(row->rendered_chars_syntax_highlight_type + i, SYNTAX_HIGHLIGHT_MODE_SINGLE_LINE_COMMENT, row->size - i);
             break;
