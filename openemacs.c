@@ -1186,12 +1186,16 @@ static void editor_init(void) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: openemacs <filename>\n");
+    if (argc == 2) {
+        editor_init();
+        editor_open(argv[1]);
+    } else if (argc == 3 && !strcmp(argv[1], "-nw")) {
+        editor_init();
+        editor_open(argv[2]);
+    } else {
+        fprintf(stderr, "Usage: openemacs <filename>\nOr with the emacs no-windows option: openemacs -nw <filename>");
         exit(EXIT_FAILURE);
     }
-    editor_init();
-    editor_open(argv[1]);
     while (true) {
         editor_refresh_screen();
         editor_process_keypress();
